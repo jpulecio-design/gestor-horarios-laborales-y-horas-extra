@@ -1,4 +1,4 @@
-const usuarios = require("../data/usuarios.mock.js");
+const usuarios = require("./usuarios.mock.js");
 
 function buscarPorUsername(username) {
     return usuarios.find(

@@ -1,5 +1,5 @@
 const servicioAutenticacion = require(
-    "../servicios/servicioAutenticacion"
+    "./servicios/servicioAutenticacion"
 );
 
 function iniciarSesion(req, res) {

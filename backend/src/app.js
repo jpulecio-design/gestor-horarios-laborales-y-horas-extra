@@ -1,7 +1,7 @@
 const express = require("express");
 
 const rutaAutenticacion = require(
-    "./modules/auth/rutas/rutaAutenticacion"
+    "./modules/auth/rutaAutenticacion"
 );
 
 const app = express();

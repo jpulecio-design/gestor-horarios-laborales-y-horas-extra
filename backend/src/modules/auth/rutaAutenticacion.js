@@ -1,7 +1,7 @@
 const express = require("express");
 
 const controladorAutenticacion = require(
-    "../compartido/controladores/controladorAutenticacion"
+    "./compartido/controladorAutenticacion"
 );
 
 const router = express.Router();
