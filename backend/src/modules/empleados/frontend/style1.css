@@ -1,0 +1,90 @@
+/* Estilos básicos: nada avanzado, solo para que se vea ordenado */
+
+body {
+    font-family: Arial, sans-serif;
+    max-width: 700px;
+    margin: 30px auto;
+    padding: 0 15px;
+    color: #222;
+}
+
+h1 {
+    text-align: center;
+    color: #1f3864;
+}
+
+h2 {
+    color: #2e5395;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 4px;
+    margin-top: 25px;
+}
+
+form {
+    background-color: #f5f7fa;
+    padding: 15px 20px;
+    border-radius: 8px;
+    border: 1px solid #dce6f1;
+}
+
+label {
+    display: block;
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+input,
+select {
+    width: 100%;
+    padding: 6px;
+    margin-top: 4px;
+    box-sizing: border-box;
+    /* para que el padding no "ensanche" el input */
+    border: 1px solid #bbb;
+    border-radius: 4px;
+}
+
+button {
+    margin-top: 18px;
+    padding: 10px 18px;
+    background-color: #2e5395;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+button:hover {
+    background-color: #1f3864;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+th,
+td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: left;
+    font-size: 14px;
+}
+
+th {
+    background-color: #1f3864;
+    color: white;
+}
+
+tr:nth-child(even) {
+    background-color: #f2f2f2;
+    /* esto ya lo conoces: selector nth-child */
+}
+
+td button {
+    margin-top: 0;
+    padding: 4px 10px;
+    font-size: 13px;
+}
