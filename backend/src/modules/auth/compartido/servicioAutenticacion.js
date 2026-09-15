@@ -1,4 +1,6 @@
-const repositorioUsuarios = require("../repositorios/repositorioUsuarios");
+const repositorioUsuarios = require(
+    "./repositorioUsuarios"
+);
 
 function iniciarSesion(username, password) {
 
