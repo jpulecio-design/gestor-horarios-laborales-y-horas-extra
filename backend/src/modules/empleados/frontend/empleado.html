@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Registro de Empleados</title>
+    <link rel="stylesheet" href="style1.css">
+</head>
+
+<body>
+
+    <h1>Registro y Control de Empleados</h1>
+
+    <!-- ===================== FORMULARIO ===================== -->
+    <!-- No usamos type="submit" en el botón a propósito: así evitamos que la
+       página se recargue y no necesitamos usar preventDefault(), que todavía
+       no has visto. Con type="button" + addEventListener nos alcanza. -->
+    <form id="formEmpleado">
+
+        <h2>Datos del usuario (molde)</h2>
+
+        <label for="inputNombre">Nombre:</label>
+        <input type="text" id="inputNombre">
+
+        <label for="inputApellido">Apellido:</label>
+        <input type="text" id="inputApellido">
+
+        <label for="inputCedula">Cédula:</label>
+        <input type="text" id="inputCedula">
+
+        <label for="inputCorreo">Correo:</label>
+        <input type="email" id="inputCorreo">
+
+        <label for="inputContrasena">Contraseña (login interno):</label>
+        <input type="password" id="inputContrasena">
+
+        <label for="inputTelefono">Teléfono:</label>
+        <input type="text" id="inputTelefono">
+
+        <h2>Datos propios del empleado</h2>
+
+        <label for="inputHoraEntrada">Hora de entrada:</label>
+        <input type="time" id="inputHoraEntrada">
+
+        <label for="inputHoraSalida">Hora de salida:</label>
+        <input type="time" id="inputHoraSalida">
+
+        <label for="inputTurno">Turno:</label>
+        <select id="inputTurno">
+            <option value="Diurno">Diurno</option>
+            <option value="Nocturno">Nocturno</option>
+        </select>
+
+        <label for="inputFechaIngreso">Fecha de ingreso a la empresa:</label>
+        <input type="date" id="inputFechaIngreso">
+
+        <h2>Información del acudiente</h2>
+
+        <label for="inputAcudienteNombre">Nombre del acudiente:</label>
+        <input type="text" id="inputAcudienteNombre">
+
+        <label for="inputAcudienteTelefono">Teléfono del acudiente:</label>
+        <input type="text" id="inputAcudienteTelefono">
+
+        <br>
+        <button type="button" id="btnGuardar">Guardar</button>
+    </form>
+
+    <!-- ===================== TABLA DE EMPLEADOS ===================== -->
+    <h2>Empleados registrados</h2>
+    <table id="tablaEmpleados">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nombre completo</th>
+                <th>Cédula</th>
+                <th>Correo</th>
+                <th>Teléfono</th>
+                <th>Turno</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <!-- Este tbody empieza vacío: el JS lo va llenando con JavaScript -->
+        <tbody id="cuerpoTablaEmpleados"></tbody>
+    </table>
+
+    <!-- Los scripts van AL FINAL del body a propósito: cuando el navegador llega
+       aquí, todos los elementos de arriba (form, table, inputs) ya existen
+       en el DOM, así que document.getElementById() siempre los va a encontrar.
+       El ORDEN importa: primero el estado, luego la lógica, luego el DOM
+       y de último main.js, que es el que conecta todo. -->
+
+    <!-- backend: lógica (no toca el HTML) -->
+    <script src="../backend/estado.js"></script>
+    <script src="../backend/usuario.js"></script>
+    <script src="../backend/empleado.js"></script>
+    <script src="../backend/repositorioEmpleados.js"></script>
+    <script src="../backend/detectorCambios.js"></script>
+    <script src="../backend/telegram.js"></script>
+
+    <!-- frontend: todo lo que toca el HTML -->
+    <script src="formulario.js"></script>
+    <script src="tabla.js"></script>
+    <script src="controladorEmpleados.js"></script>
+    <script src="main.js"></script>
+</body>
+
+</html>
