@@ -4,5 +4,3 @@ Integrantes:
 -Jimmy Paredes
 -Diego Muñoz
 -Alejandro Tosne
--Ivan Chimunja
--Santiago Bambague
