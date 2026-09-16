@@ -2,10 +2,11 @@ const servicioAutenticacion = require(
     "./servicioAutenticacion"
 );
 
-function iniciarSesion(req, res) {
+async function iniciarSesion(req, res) {
+
     const { username, password } = req.body;
 
-    const resultado = servicioAutenticacion.iniciarSesion(
+    const resultado = await servicioAutenticacion.iniciarSesion(
         username,
         password
     );
