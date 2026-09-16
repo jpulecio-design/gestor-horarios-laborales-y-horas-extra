@@ -1,6 +1,4 @@
-const servicioAutenticacion = require(
-    "./servicioAutenticacion"
-);
+const servicioAutenticacion = require("./servicioAutenticacion");
 
 async function iniciarSesion(req, res) {
 
