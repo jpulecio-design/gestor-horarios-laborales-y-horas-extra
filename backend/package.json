@@ -8,15 +8,22 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "",
-  "main": "test-connection.js",
+  "main": "src/server.js",
   "directories": {
     "test": "tests"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/server.js",
+    "test": "node tests/empleados.prueba.js && node tests/horas-extra.prueba.js && node tests/nomina.prueba.js && node tests/integracion.prueba.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs"
+  "type": "commonjs",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "oracledb": "^7.0.1",
+    "prompt-sync": "^4.2.0"
+  }
 }
