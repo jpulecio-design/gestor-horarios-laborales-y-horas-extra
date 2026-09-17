@@ -2,9 +2,9 @@ const repositorioUsuarios = require(
     "./repositorioUsuarios"
 );
 
-function iniciarSesion(username, password) {
+async function iniciarSesion(username, password) {
 
-    const usuario = repositorioUsuarios.buscarPorUsername(username);
+    const usuario = await repositorioUsuarios.buscarPorUsername(username);
 
     if (!usuario) {
         return {

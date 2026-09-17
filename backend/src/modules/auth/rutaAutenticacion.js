@@ -1,8 +1,5 @@
 const express = require("express");
-
-const controladorAutenticacion = require(
-    "./compartido/controladorAutenticacion"
-);
+const controladorAutenticacion = require("./compartido/controladorAutenticacion");14
 
 const router = express.Router();
 

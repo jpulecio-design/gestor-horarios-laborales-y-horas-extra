@@ -1,11 +1,18 @@
-const usuarios = require("./usuarios.mock.js");
+const { getConnection } = require('../../../config/database');
 
-function buscarPorUsername(username) {
-    return usuarios.find(
-        usuario => usuario.username.toLowerCase() === username.toLowerCase()
+async function buscarPorUsername(username) {
+  const connection = await getConnection();
+  try {
+    const result = await connection.execute(
+      `SELECT id_empleado, correo, contrasena, rol
+       FROM EMPLEADO
+       WHERE correo = :username`,
+      { username }
     );
+    return result.rows[0] || null;
+  } finally {
+    await connection.close();
+  }
 }
 
-module.exports = {
-    buscarPorUsername
-};
+module.exports = { buscarPorUsername };
