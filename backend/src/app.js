@@ -1,10 +1,8 @@
 const express = require("express");
 
-const rutaAutenticacion = require(
-    "./modules/auth/rutas/rutaAutenticacion"
-);
+const rutaAutenticacion = require("./modules/auth/rutaAutenticacion");
 
-const rutaTest = require("./modules/test/rutas/rutaTest");
+const rutaTest = require("../routes/test.routes");
 const app = express();
 
 app.use(express.json());

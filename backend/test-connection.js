@@ -1,13 +1,27 @@
-const { getConnection } = require('./src/config/database'); 
-async function probarConexion() { let connection; try { connection = await getConnection(); 
-    console.log(' Conexión exitosa a Oracle'); 
-    const result = await connection.execute(`SELECT sysdate AS fecha_actual FROM dual`); 
-    console.log('Fecha desde la base de datos:', result.rows[0].FECHA_ACTUAL);
- } 
- catch (err) { console.error(' Falló la conexión:', err.message); 
- }
+const { getConnection } = require("./src/config/database");
 
- finally { if (connection) { await connection.close(); 
-    console.log('Conexión cerrada correctamente'); 
-} } } 
+async function probarConexion() {
+    let connection;
+
+    try {
+        connection = await getConnection();
+
+        const resultado = await connection.execute(`
+            SELECT 
+                USER AS USUARIO,
+                SYS_CONTEXT('USERENV', 'CURRENT_SCHEMA') AS ESQUEMA
+            FROM DUAL
+        `);
+
+        console.log(resultado.rows);
+
+    } catch (error) {
+        console.error(error);
+    } finally {
+        if (connection) {
+            await connection.close();
+        }
+    }
+}
+
 probarConexion();
