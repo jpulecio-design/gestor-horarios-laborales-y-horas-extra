@@ -1,7 +1,7 @@
 function detectarCambios(empleadoViejo, datosNuevos) {
     let cambios = [];
 
-    // campo pal molde
+    // campos del molde viven en empleado viejo
     let usuarioNuevo = {
         nombre: datosNuevos.nombre,
         apellido: datosNuevos.apellido,
@@ -16,11 +16,10 @@ function detectarCambios(empleadoViejo, datosNuevos) {
         let valorNuevo = usuarioNuevo[campo];
 
         if (campo === "contrasena") {
-            // avisamos si cambio la cotra unicamente
             if (valorViejo !== valorNuevo) {
                 cambios.push("Contraseña actualizada");
             }
-            continue; // salta a la siguiente vuelta del for sin hacer lo de abajo
+            continue; // salta a la siguiente vuelta del for
         }
 
         if (valorViejo !== valorNuevo) {
@@ -28,24 +27,32 @@ function detectarCambios(empleadoViejo, datosNuevos) {
         }
     }
 
-    // Campos propios del empleado 
-    if (empleadoViejo.horaEntrada !== datosNuevos.horaEntrada) {
-        cambios.push("horaEntrada: '" + empleadoViejo.horaEntrada + "' -> '" + datosNuevos.horaEntrada + "'");
+    // Campos propios del empleado viven directo en empleadoViejo
+    let empleadoNuevo = {
+        fechaIngreso: datosNuevos.fechaIngreso,
+        cargo: datosNuevos.cargo,
+        salarioBase: datosNuevos.salarioBase,
+        telegramChatId: datosNuevos.telegramChatId
+    };
+
+    for (let campo in empleadoNuevo) {
+        if (empleadoViejo[campo] !== empleadoNuevo[campo]) {
+            cambios.push(campo + ": '" + empleadoViejo[campo] + "' -> '" + empleadoNuevo[campo] + "'");
+        }
     }
-    if (empleadoViejo.horaSalida !== datosNuevos.horaSalida) {
-        cambios.push("horaSalida: '" + empleadoViejo.horaSalida + "' -> '" + datosNuevos.horaSalida + "'");
-    }
-    if (empleadoViejo.turno !== datosNuevos.turno) {
-        cambios.push("turno: '" + empleadoViejo.turno + "' -> '" + datosNuevos.turno + "'");
-    }
-    if (empleadoViejo.fechaIngreso !== datosNuevos.fechaIngreso) {
-        cambios.push("fechaIngreso: '" + empleadoViejo.fechaIngreso + "' -> '" + datosNuevos.fechaIngreso + "'");
-    }
-    if (empleadoViejo.acudiente.nombre !== datosNuevos.acudienteNombre) {
-        cambios.push("acudiente.nombre: '" + empleadoViejo.acudiente.nombre + "' -> '" + datosNuevos.acudienteNombre + "'");
-    }
-    if (empleadoViejo.acudiente.telefono !== datosNuevos.acudienteTelefono) {
-        cambios.push("acudiente.telefono: '" + empleadoViejo.acudiente.telefono + "' -> '" + datosNuevos.acudienteTelefono + "'");
+
+    // Contacto de emergencia vive en empleadoViejo.contactoEmergencia
+    let contactoNuevo = {
+        nombre: datosNuevos.contactoNombre,
+        telefono: datosNuevos.contactoTelefono,
+        parentesco: datosNuevos.contactoParentesco
+    };
+
+    for (let campo in contactoNuevo) {
+        let valorViejo = empleadoViejo.contactoEmergencia[campo];
+        if (valorViejo !== contactoNuevo[campo]) {
+            cambios.push("contactoEmergencia." + campo + ": '" + valorViejo + "' -> '" + contactoNuevo[campo] + "'");
+        }
     }
 
     return cambios;

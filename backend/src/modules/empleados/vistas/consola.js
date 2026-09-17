@@ -1,6 +1,6 @@
 const prompt = require("prompt-sync")({ sigint: true });
 
-// hace pregunta pa pasar a modo editor y editar
+// hace la pregunta y si la persona da enter se pasa al valor que ya tenai
 function preguntar(texto, valorActual) {
     if (valorActual === undefined) {
         return prompt(texto + ": ");
@@ -14,10 +14,9 @@ function preguntar(texto, valorActual) {
 }
 
 // pide todos los datos de un empleado y los junta en un objeto simple
-//  si empleadoActual es null entonces modo crear 
-// si trae un empleado entonces modo editar
+
 function pedirDatosEmpleado(empleadoActual) {
-    let actual = {}; // en modo crear todas las propiedades quedan undefined
+    let actual = {}; // en modo crear, todas las propiedades quedan undefined
 
     if (empleadoActual !== null) {
         console.log("(Presiona Enter para dejar el valor que está entre corchetes)");
@@ -28,12 +27,13 @@ function pedirDatosEmpleado(empleadoActual) {
             correo: empleadoActual.usuario.correo,
             contrasena: empleadoActual.usuario.contrasena,
             telefono: empleadoActual.usuario.telefono,
-            horaEntrada: empleadoActual.horaEntrada,
-            horaSalida: empleadoActual.horaSalida,
-            turno: empleadoActual.turno,
             fechaIngreso: empleadoActual.fechaIngreso,
-            acudienteNombre: empleadoActual.acudiente.nombre,
-            acudienteTelefono: empleadoActual.acudiente.telefono
+            cargo: empleadoActual.cargo,
+            salarioBase: empleadoActual.salarioBase,
+            contactoNombre: empleadoActual.contactoEmergencia.nombre,
+            contactoTelefono: empleadoActual.contactoEmergencia.telefono,
+            contactoParentesco: empleadoActual.contactoEmergencia.parentesco,
+            telegramChatId: empleadoActual.telegramChatId
         };
     }
 
@@ -43,7 +43,7 @@ function pedirDatosEmpleado(empleadoActual) {
     let cedula = preguntar("Cédula", actual.cedula);
     let correo = preguntar("Correo", actual.correo);
 
-    // la contraseña se oculta con prompt.hide() y no se muestra en la consola
+    // la contraseña se escribe oculta y nunca se muestra
     let contrasena = prompt.hide("Contraseña" + (empleadoActual !== null ? " (Enter = sin cambios)" : "") + ": ");
     if (contrasena === "" && empleadoActual !== null) {
         contrasena = actual.contrasena;
@@ -52,14 +52,19 @@ function pedirDatosEmpleado(empleadoActual) {
     let telefono = preguntar("Teléfono", actual.telefono);
 
     console.log("\n--- Datos propios del empleado ---");
-    let horaEntrada = preguntar("Hora de entrada (HH:MM)", actual.horaEntrada);
-    let horaSalida = preguntar("Hora de salida (HH:MM)", actual.horaSalida);
-    let turno = preguntar("Turno (Diurno/Nocturno)", actual.turno);
     let fechaIngreso = preguntar("Fecha de ingreso (AAAA-MM-DD)", actual.fechaIngreso);
+    let cargo = preguntar("Cargo", actual.cargo);
+    let salarioBase = preguntar("Salario base (solo números)", actual.salarioBase);
 
-    console.log("\n--- Información del acudiente ---");
-    let acudienteNombre = preguntar("Nombre del acudiente", actual.acudienteNombre);
-    let acudienteTelefono = preguntar("Teléfono del acudiente", actual.acudienteTelefono);
+    console.log("\n--- Contacto de emergencia ---");
+    let contactoNombre = preguntar("Nombre del contacto", actual.contactoNombre);
+    let contactoTelefono = preguntar("Teléfono del contacto", actual.contactoTelefono);
+    let contactoParentesco = preguntar("Parentesco (ej: Madre, Hermano)", actual.contactoParentesco);
+
+    // El empleado debe haberle dado "Iniciar" al bot para poder recibir avisos.
+    // Si se deja vacío, los avisos de este empleado van al administrador.
+    console.log("\n--- Notificaciones ---");
+    let telegramChatId = preguntar("Chat ID de Telegram (opcional, Enter para omitir)", actual.telegramChatId);
 
     return {
         nombre: nombre,
@@ -68,21 +73,22 @@ function pedirDatosEmpleado(empleadoActual) {
         correo: correo,
         contrasena: contrasena,
         telefono: telefono,
-        horaEntrada: horaEntrada,
-        horaSalida: horaSalida,
-        turno: turno,
-        acudienteNombre: acudienteNombre,
-        acudienteTelefono: acudienteTelefono,
-        fechaIngreso: fechaIngreso
+        fechaIngreso: fechaIngreso,
+        cargo: cargo,
+        salarioBase: salarioBase,
+        contactoNombre: contactoNombre,
+        contactoTelefono: contactoTelefono,
+        contactoParentesco: contactoParentesco,
+        telegramChatId: telegramChatId
     };
 }
 
-// Pide un id y lo convierte a numero
+// convierte id a numero y el prompt devuelve texto
 function pedirId(texto) {
     return Number(prompt(texto + ": "));
 }
 
-// muestra la lista de empleados 
+// muestra la lista de empleados
 function mostrarEmpleados(lista) {
     console.log("\n===== EMPLEADOS REGISTRADOS =====");
 
@@ -99,7 +105,7 @@ function mostrarEmpleados(lista) {
             " | Cédula: " + emp.usuario.cedula +
             " | Correo: " + emp.usuario.correo +
             " | Tel: " + emp.usuario.telefono +
-            " | Turno: " + emp.turno +
+            " | Cargo: " + emp.cargo +
             " | Estado: " + emp.usuario.estado
         );
     }
