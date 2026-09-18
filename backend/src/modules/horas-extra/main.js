@@ -1,6 +1,6 @@
-const consola = require("./vistas/consola");
-const controlador = require("./controladores/controladorHorasExtra");
-const repositorio = require("./repositorios/repositorioHorasExtra");
+const consola = require("./cli/consola");
+const controlador = require("./app/controladorHorasExtra");
+const repositorio = require("./datos/repositorioHorasExtra");
 
 function iniciar() {
     let continuar = true;

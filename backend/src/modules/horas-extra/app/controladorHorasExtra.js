@@ -1,6 +1,6 @@
-const horaExtra = require("../modelos/horaExtra");
-const repositorio = require("../repositorios/repositorioHorasExtra");
-const calculador = require("../servicios/calculadorHorasExtra");
+const horaExtra = require("../dominio/horaExtra");
+const repositorio = require("../datos/repositorioHorasExtra");
+const calculador = require("../dominio/calculadorHorasExtra");
 const repositorioEmpleados = require("../../empleados/repositorios/repositorioEmpleados");
 
 // registra una hora extra nueva

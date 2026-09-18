@@ -1,7 +1,7 @@
 const express = require("express");
 
-const controlador = require("../controladores/controladorNomina");
-const repositorio = require("../repositorios/repositorioNomina");
+const controlador = require("../app/controladorNomina");
+const repositorio = require("../datos/repositorioNomina");
 
 const router = express.Router();
 

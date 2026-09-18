@@ -3,8 +3,8 @@ const express = require("express");
 const rutaAutenticacion = require("./modules/auth/rutaAutenticacion");
 const rutaTest = require("./modules/test/rutas/rutaTest");
 const rutaEmpleados = require("./modules/empleados/rutas/rutaEmpleados");
-const rutaHorasExtra = require("./modules/horas-extra/rutas/rutaHorasExtra");
-const rutaNomina = require("./modules/nomina/rutas/rutaNomina");
+const rutaHorasExtra = require("./modules/horas-extra/api/rutaHorasExtra");
+const rutaNomina = require("./modules/nomina/api/rutaNomina");
 
 const app = express();
 

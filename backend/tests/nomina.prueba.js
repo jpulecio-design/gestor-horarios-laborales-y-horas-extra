@@ -1,7 +1,7 @@
 const controladorEmpleados = require("../src/modules/empleados/controladores/controladorEmpleados");
-const controladorHorasExtra = require("../src/modules/horas-extra/controladores/controladorHorasExtra");
-const controlador = require("../src/modules/nomina/controladores/controladorNomina");
-const repositorio = require("../src/modules/nomina/repositorios/repositorioNomina");
+const controladorHorasExtra = require("../src/modules/horas-extra/app/controladorHorasExtra");
+const controlador = require("../src/modules/nomina/app/controladorNomina");
+const repositorio = require("../src/modules/nomina/datos/repositorioNomina");
 
 // dejamos de base dos empleados y sus horas extra del periodo 2026-08
 controladorEmpleados.registrarEmpleado({

@@ -1,6 +1,6 @@
 const controladorEmpleados = require("../src/modules/empleados/controladores/controladorEmpleados");
-const controlador = require("../src/modules/horas-extra/controladores/controladorHorasExtra");
-const repositorio = require("../src/modules/horas-extra/repositorios/repositorioHorasExtra");
+const controlador = require("../src/modules/horas-extra/app/controladorHorasExtra");
+const repositorio = require("../src/modules/horas-extra/datos/repositorioHorasExtra");
 
 // dejamos de base dos empleados para poder asignarles horas extra
 controladorEmpleados.registrarEmpleado({

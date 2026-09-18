@@ -1,4 +1,4 @@
-const repositorioHorasExtra = require("../../horas-extra/repositorios/repositorioHorasExtra");
+const repositorioHorasExtra = require("../../horas-extra/datos/repositorioHorasExtra");
 
 // supuestos de calculo (legislacion laboral)
 const HORAS_POR_MES = 240;          // 30 dias x 8 horas

@@ -1,4 +1,4 @@
-const estado = require("../repositorios/estado");
+const estado = require("../datos/estado");
 
 // aqui queda armada la hora extra con su valor ya calculado
 // el valor entra ya calculado por el servicio para no mezclar responsabilidades

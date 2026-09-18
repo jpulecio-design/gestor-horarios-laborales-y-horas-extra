@@ -1,7 +1,7 @@
 const express = require("express");
 
-const controlador = require("../controladores/controladorHorasExtra");
-const repositorio = require("../repositorios/repositorioHorasExtra");
+const controlador = require("../app/controladorHorasExtra");
+const repositorio = require("../datos/repositorioHorasExtra");
 
 const router = express.Router();
 

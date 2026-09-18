@@ -1,4 +1,4 @@
-const estado = require("../repositorios/estado");
+const estado = require("../datos/estado");
 
 // aqui queda armada la nomina con la liquidacion ya calculada
 // el objeto de liquidacion llega desde el servicio para guardar todos los valores en la nomina

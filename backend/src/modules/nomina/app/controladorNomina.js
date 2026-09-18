@@ -1,6 +1,6 @@
-const nomina = require("../modelos/nomina");
-const repositorio = require("../repositorios/repositorioNomina");
-const liquidacion = require("../servicios/liquidacion");
+const nomina = require("../dominio/nomina");
+const repositorio = require("../datos/repositorioNomina");
+const liquidacion = require("../dominio/liquidacion");
 const repositorioEmpleados = require("../../empleados/repositorios/repositorioEmpleados");
 
 // registra una nomina nueva con su liquidacion calculada
