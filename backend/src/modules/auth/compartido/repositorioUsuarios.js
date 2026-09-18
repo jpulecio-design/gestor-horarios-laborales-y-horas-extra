@@ -1,18 +1,33 @@
-const { getConnection } = require('../../../config/database');
+const database = require("../../../config/database");
 
-async function buscarPorUsername(username) {
-  const connection = await getConnection();
-  try {
-    const result = await connection.execute(
-      `SELECT id_empleado, correo, contrasena, rol
-       FROM EMPLEADO
-       WHERE correo = :username`,
-      { username }
-    );
-    return result.rows[0] || null;
-  } finally {
-    await connection.close();
-  }
+function buscarPorUsername(username) {
+
+    const sql =
+        "SELECT id_empleado, correo, contrasena, rol, estado " +
+        "FROM EMPLEADO " +
+        "WHERE correo = :username";
+
+    return database.ejecutar(sql, {
+        username: username
+    })
+        .then(function (resultado) {
+
+            if (resultado.rows.length === 0) {
+                return null;
+            }
+
+            const fila = resultado.rows[0];
+
+            return {
+                id: fila.ID_EMPLEADO,
+                username: fila.CORREO,
+                password: fila.CONTRASENA,
+                rol: fila.ROL,
+                estado: fila.ESTADO
+            };
+        });
 }
 
-module.exports = { buscarPorUsername };
+module.exports = {
+    buscarPorUsername: buscarPorUsername
+};
