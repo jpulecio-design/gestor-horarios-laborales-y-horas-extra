@@ -1,30 +1,46 @@
 const usuario = require("./usuario");
 
-// aqui queda armado el empleado y usuario como una propiedad
-function crearEmpleado(datos) {
+// convierte null en "" y cualquier otro valor en texto
+function textoOVacio(valor) {
+    if (valor === null || valor === undefined) {
+        return "";
+    }
+    return String(valor); // 
+}
+
+// arma el objeto "empleado" a partir de una fila de la consulta
+
+function crearEmpleadoDesdeFila(fila) {
     let empleado = {
         usuario: usuario.crearMoldeUsuario(
-            datos.nombre,
-            datos.apellido,
-            datos.cedula,
-            datos.correo,
-            datos.contrasena,
-            datos.telefono,
-            "Empleado" // el rol siempre es "Empleado" en este modulo
+            fila.ID_EMPLEADO,            
+            textoOVacio(fila.NOMBRE),
+            textoOVacio(fila.APELLIDO),
+            textoOVacio(fila.CEDULA),
+            textoOVacio(fila.CORREO),
+            textoOVacio(fila.CONTRASENA),
+            textoOVacio(fila.TELEFONO),
+            textoOVacio(fila.ROL),
+            textoOVacio(fila.ESTADO),
+            textoOVacio(fila.FECHA_CREACION)
         ),
-        horaEntrada: datos.horaEntrada,
-        horaSalida: datos.horaSalida,
-        turno: datos.turno,
-        acudiente: {
-            nombre: datos.acudienteNombre,
-            telefono: datos.acudienteTelefono
-        },
-        fechaIngreso: datos.fechaIngreso
+        
+        fechaIngreso: textoOVacio(fila.FECHA_INGRESO),
+        cargo: textoOVacio(fila.CARGO),
+        salarioBase: textoOVacio(fila.SALARIO_BASE),
+        // si esta vacio el aviso le llega al administrador
+        telegramChatId: textoOVacio(fila.TELEGRAM_CHAT_ID),
+
+        contactoEmergencia: {
+            nombre: textoOVacio(fila.CONTACTO_NOMBRE),
+            telefono: textoOVacio(fila.CONTACTO_TELEFONO),
+            parentesco: textoOVacio(fila.CONTACTO_PARENTESCO)
+        }
     };
 
     return empleado;
 }
 
 module.exports = {
-    crearEmpleado: crearEmpleado
+    crearEmpleadoDesdeFila: crearEmpleadoDesdeFila
 };

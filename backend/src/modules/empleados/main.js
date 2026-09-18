@@ -3,37 +3,57 @@ const controlador = require("./controladores/controladorEmpleados");
 const repositorio = require("./repositorios/repositorioEmpleados");
 
 function iniciar() {
-    let continuar = true;
+    let opcion = consola.mostrarMenu();
+    let tarea; // aqui se guarda la promesa de la opcion elegida
 
-    while (continuar) {
-        let opcion = consola.mostrarMenu();
-
-        if (opcion === "1") {
-            let datos = consola.pedirDatosEmpleado(null);
-            controlador.registrarEmpleado(datos);
-
-        } else if (opcion === "2") {
-            consola.mostrarEmpleados(repositorio.obtenerTodos());
-
-        } else if (opcion === "3") {
-            let id = consola.pedirId("ID del empleado a editar");
-            let emp = repositorio.buscarEmpleadoPorId(id);
-
-            if (emp === null) {
-                console.log("ERROR: no existe un empleado con ese id.");
-            } else {
-                let datosNuevos = consola.pedirDatosEmpleado(emp);
-                controlador.guardarEdicion(id, datosNuevos);
-            }
-
-        } else if (opcion === "0") {
-            continuar = false;
-            console.log("Hasta luego.");
-
-        } else {
-            console.log("Opción no válida.");
-        }
+    if (opcion === "1") {
+        tarea = opcionRegistrar();
+    } else if (opcion === "2") {
+        tarea = opcionVerEmpleados();
+    } else if (opcion === "3") {
+        tarea = opcionEditar();
+    } else if (opcion === "0") {
+        console.log("Hasta luego.");
+        return; // no llamamos a iniciar() otra vez y el programa termina
+    } else {
+        console.log("Opción no válida.");
+        tarea = Promise.resolve(); // promesa ya terminada para seguir igual
     }
+
+    tarea
+        .catch(function (error) {
+            // errores inesperados 
+            console.log("ERROR: " + error.message);
+        })
+        .then(function () {
+            iniciar(); // volver al menú
+        });
+}
+
+function opcionRegistrar() {
+    let datos = consola.pedirDatosEmpleado(null);
+    return controlador.registrarEmpleado(datos);
+}
+
+function opcionVerEmpleados() {
+    return repositorio.obtenerTodos()
+        .then(function (lista) {
+            consola.mostrarEmpleados(lista);
+        });
+}
+
+function opcionEditar() {
+    let id = consola.pedirId("ID del empleado a editar");
+
+    return repositorio.buscarEmpleadoPorId(id)
+        .then(function (empleado) {
+            if (empleado === null) {
+                console.log("ERROR: no existe un empleado con ese id.");
+                return;
+            }
+            let datosNuevos = consola.pedirDatosEmpleado(empleado);
+            return controlador.guardarEdicion(id, datosNuevos);
+        });
 }
 
 iniciar();
