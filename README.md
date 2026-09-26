@@ -1,6 +1,6 @@
 Integrantes:
 -Juan Pulecio
 -Juan Garcia
--Jimmy Paredes
+-Jymmy Paredes
 -Diego Muñoz
 -Alejandro Tosne

@@ -47,9 +47,11 @@ if (btnTest) {
     btnTest.addEventListener("click", probarConexion);
 }
 
-// Ejecutar prueba de conexión al cargar
+// Ejecutar prueba de conexion al cargar
+
 probarConexion();
 
 // Exportar funciones para uso en ventana si se requiere
+
 window.backendApi = api;
 window.probarConexion = probarConexion;

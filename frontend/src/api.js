@@ -36,24 +36,30 @@ export async function apiRequest(endpoint, options = {}) {
     }
 }
 
-// Servicios esenciales de conexión
+// Servicios esenciales de conexion 
+
 export const api = {
-    // Verificación de estado del servidor
+    // Verificacion de estado del servidor
+
     checkHealth: () => apiRequest("/test/health"),
     checkDatabase: () => apiRequest("/test/test-db"),
 
-    // Autenticación
+    // Autenticacion
+
     login: (credentials) => apiRequest("/auth/login", { method: "POST", body: credentials }),
 
     // Empleados
+    
     getEmpleados: () => apiRequest("/empleados"),
     crearEmpleado: (empleado) => apiRequest("/empleados", { method: "POST", body: empleado }),
 
     // Horas Extra
+    
     getHorasExtra: () => apiRequest("/horas-extra"),
     registrarHorasExtra: (data) => apiRequest("/horas-extra", { method: "POST", body: data }),
 
-    // Nómina
+    // Nomina
+
     getNomina: () => apiRequest("/nomina"),
     calcularNomina: (data) => apiRequest("/nomina", { method: "POST", body: data })
 };
