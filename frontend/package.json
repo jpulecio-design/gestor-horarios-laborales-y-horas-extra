@@ -1,0 +1,8 @@
+{
+  "name": "frontend",
+  "version": "1.0.0",
+  "description": "Cliente frontend esencial",
+  "scripts": {
+    "start": "npx serve -l 5000 ."
+  }
+}
