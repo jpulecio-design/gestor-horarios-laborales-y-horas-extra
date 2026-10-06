@@ -89,9 +89,9 @@ function insertarEmpleado(datos) {
 
     let sql =
         "INSERT INTO EMPLEADO " +
-        "  (nombre, apellido, cedula, correo, contrasena, telefono, rol, fecha_ingreso, cargo, salario_base, telegram_chat_id) " +
+        "  (nombre, apellido, cedula, correo, contrasena, telefono, rol, estado, fecha_ingreso, cargo, salario_base, telegram_chat_id) " +
         "VALUES " +
-        "  (:nombre, :apellido, :cedula, :correo, :contrasena, :telefono, 'Empleado', " +
+        "  (:nombre, :apellido, :cedula, :correo, :contrasena, :telefono, 'Empleado', :estado, " +
         "   TO_DATE(:fechaIngreso, 'YYYY-MM-DD'), :cargo, :salarioBase, :telegramChatId) " +
         "RETURNING id_empleado INTO :id";
 
@@ -102,6 +102,7 @@ function insertarEmpleado(datos) {
         correo: datos.correo,
         contrasena: datos.contrasena,
         telefono: datos.telefono,
+        estado: datos.estado,
         fechaIngreso: datos.fechaIngreso,
         cargo: datos.cargo,
         salarioBase: salarioANumero(datos.salarioBase),
@@ -111,7 +112,7 @@ function insertarEmpleado(datos) {
 
     return database.ejecutar(sql, parametros)
         .then(function (resultado) {
-            let idNuevo = resultado.outBinds.id[0]; 
+            let idNuevo = resultado.outBinds.id[0];
 
             if (estaVacio(datos.contactoNombre)) {
                 return idNuevo; // sin contacto aqui acaba
@@ -131,7 +132,7 @@ function actualizarEmpleado(id, datos) {
     let sql =
         "UPDATE EMPLEADO SET " +
         "  nombre = :nombre, apellido = :apellido, cedula = :cedula, correo = :correo, " +
-        "  contrasena = :contrasena, telefono = :telefono, " +
+        "  contrasena = :contrasena, telefono = :telefono, estado = :estado, " +
         "  fecha_ingreso = TO_DATE(:fechaIngreso, 'YYYY-MM-DD'), " +
         "  cargo = :cargo, salario_base = :salarioBase, telegram_chat_id = :telegramChatId " +
         "WHERE id_empleado = :id";
@@ -143,6 +144,7 @@ function actualizarEmpleado(id, datos) {
         correo: datos.correo,
         contrasena: datos.contrasena,
         telefono: datos.telefono,
+        estado: datos.estado,
         fechaIngreso: datos.fechaIngreso,
         cargo: datos.cargo,
         salarioBase: salarioANumero(datos.salarioBase),
@@ -156,6 +158,14 @@ function actualizarEmpleado(id, datos) {
         });
 }
 
+//esto cambia solo el estado entre activo o inactivo
+function cambiarEstado(id, estado) {
+    let sql =
+        "UPDATE EMPLEADO SET estado = :estado " +
+        "WHERE id_empleado = :id";
+
+    return database.ejecutar(sql, { estado: estado, id: id });
+}
 
 // CONTACTO DE EMERGENCIA
 
@@ -202,5 +212,6 @@ module.exports = {
     buscarEmpleadoPorId: buscarEmpleadoPorId,
     existeCedulaOCorreo: existeCedulaOCorreo,
     insertarEmpleado: insertarEmpleado,
-    actualizarEmpleado: actualizarEmpleado
+    actualizarEmpleado: actualizarEmpleado,
+    cambiarEstado: cambiarEstado
 };

@@ -8,7 +8,8 @@ function detectarCambios(empleadoViejo, datosNuevos) {
         cedula: datosNuevos.cedula,
         correo: datosNuevos.correo,
         contrasena: datosNuevos.contrasena,
-        telefono: datosNuevos.telefono
+        telefono: datosNuevos.telefono,
+        estado: datosNuevos.estado
     };
 
     for (let campo in usuarioNuevo) {
@@ -16,6 +17,7 @@ function detectarCambios(empleadoViejo, datosNuevos) {
         let valorNuevo = usuarioNuevo[campo];
 
         if (campo === "contrasena") {
+            // Por seguridad, si cambió la contraseña avisamos SIN mostrar el valor real.
             if (valorViejo !== valorNuevo) {
                 cambios.push("Contraseña actualizada");
             }

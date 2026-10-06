@@ -12,6 +12,8 @@ function iniciar() {
         tarea = opcionVerEmpleados();
     } else if (opcion === "3") {
         tarea = opcionEditar();
+    } else if (opcion === "4") {
+        tarea = opcionCambiarEstado();
     } else if (opcion === "0") {
         console.log("Hasta luego.");
         return; // no llamamos a iniciar() otra vez y el programa termina
@@ -20,11 +22,10 @@ function iniciar() {
         tarea = Promise.resolve(); // promesa ya terminada para seguir igual
     }
 
-    tarea
-        .catch(function (error) {
-            // errores inesperados 
-            console.log("ERROR: " + error.message);
-        })
+    tarea.catch(function (error) {
+        // errores inesperados 
+        console.log("ERROR: " + error.message);
+    })
         .then(function () {
             iniciar(); // volver al menú
         });
@@ -53,6 +54,36 @@ function opcionEditar() {
             }
             let datosNuevos = consola.pedirDatosEmpleado(empleado);
             return controlador.guardarEdicion(id, datosNuevos);
+        });
+}
+
+// activar o inactivar enmpleado.
+function opcionCambiarEstado() {
+    let id = consola.pedirId("ID del empleado");
+
+    return repositorio.buscarEmpleadoPorId(id)
+        .then(function (empleado) {
+            if (empleado === null) {
+                console.log("ERROR: no existe un empleado con ese id.");
+                return;
+            }
+
+            let nuevoEstado = "Inactivo";
+            if (empleado.usuario.estado === "Inactivo") {
+                nuevoEstado = "Activo";
+            }
+
+            console.log(
+                "\nEmpleado: " + empleado.usuario.nombre + " " + empleado.usuario.apellido +
+                " | Estado actual: " + empleado.usuario.estado
+            );
+
+            if (!consola.confirmar("¿Cambiar su estado a " + nuevoEstado + "?")) {
+                console.log("Operación cancelada.");
+                return;
+            }
+
+            return controlador.cambiarEstado(id, nuevoEstado);
         });
 }
 
