@@ -1,5 +1,16 @@
 // Reglas del dominio de asistencia (CU03: Registro de Entrada/Salida por QR).
 
+const TIPOS = ["Entrada", "Salida"];
+const ESTADOS = ["Activo", "Anulado"];
+
+function tipoValido(tipo) {
+    return TIPOS.indexOf(tipo) !== -1;
+}
+
+function estadoValido(estado) {
+    return ESTADOS.indexOf(estado) !== -1;
+}
+
 // La entrada y la salida se alternan de forma automatica: si el ultimo
 // marcaje fue una salida (o no hay marcajes) el siguiente es una entrada;
 // si el ultimo fue una entrada, el siguiente es una salida.
@@ -25,6 +36,10 @@ function crearRegistro(datos) {
 }
 
 module.exports = {
+    TIPOS: TIPOS,
+    ESTADOS: ESTADOS,
+    tipoValido: tipoValido,
+    estadoValido: estadoValido,
     siguienteTipo: siguienteTipo,
     crearRegistro: crearRegistro
 };

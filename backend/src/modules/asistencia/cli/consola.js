@@ -10,6 +10,16 @@ function pedirId(texto) {
     return Number(prompt(texto + ": "));
 }
 
+// pide un texto; si el usuario deja vacio, devuelve el valor por defecto
+function pedirConDefecto(texto, defecto) {
+    let valorMostrado = (defecto === null || defecto === undefined || defecto === "") ? "vacío" : defecto;
+    let valor = prompt(texto + " (" + valorMostrado + "): ").trim();
+    if (valor === "") {
+        return defecto === null || defecto === undefined ? "" : defecto;
+    }
+    return valor;
+}
+
 // muestra la lista de marcajes
 function mostrarMarcajes(lista) {
     console.log("\n===== MARCAJES DE ASISTENCIA =====");
@@ -39,6 +49,7 @@ function mostrarMenu() {
     console.log("2. Ver todos los marcajes");
     console.log("3. Ver marcajes de un empleado");
     console.log("4. Generar el QR de un empleado (guarda un .png)");
+    console.log("5. Corregir un marcaje (CU10)");
     console.log("0. Salir");
     return prompt("Elige una opción: ");
 }
@@ -46,6 +57,7 @@ function mostrarMenu() {
 module.exports = {
     pedirCodigoQr: pedirCodigoQr,
     pedirId: pedirId,
+    pedirConDefecto: pedirConDefecto,
     mostrarMarcajes: mostrarMarcajes,
     mostrarMenu: mostrarMenu
 };

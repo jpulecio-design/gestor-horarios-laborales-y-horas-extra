@@ -93,10 +93,35 @@ function obtenerUltimoPorEmpleado(empleadoId) {
         });
 }
 
+// Actualiza un marcaje existente (CU10) y devuelve la fila ya corregida.
+function actualizarRegistro(id, datos) {
+    let sql =
+        "UPDATE ASISTENCIA SET " +
+        "  tipo = :tipo, " +
+        "  fecha_hora = TO_TIMESTAMP(:fechaHora, 'YYYY-MM-DD HH24:MI:SS'), " +
+        "  observacion = :observacion, " +
+        "  estado = :estado " +
+        "WHERE id_asistencia = :id";
+
+    let parametros = {
+        tipo: datos.tipo,
+        fechaHora: datos.fechaHora,
+        observacion: datos.observacion,
+        estado: datos.estado,
+        id: id
+    };
+
+    return database.ejecutar(sql, parametros)
+        .then(function () {
+            return buscarPorId(id);
+        });
+}
+
 module.exports = {
     agregarRegistro: agregarRegistro,
     obtenerTodos: obtenerTodos,
     buscarPorId: buscarPorId,
     obtenerPorEmpleado: obtenerPorEmpleado,
-    obtenerUltimoPorEmpleado: obtenerUltimoPorEmpleado
+    obtenerUltimoPorEmpleado: obtenerUltimoPorEmpleado,
+    actualizarRegistro: actualizarRegistro
 };

@@ -10,7 +10,7 @@ const servidor = app.listen(PORT, () => {
     console.log("  /api/empleados   -> GET /, POST /, PUT /:id");
     console.log("  /api/horas-extra -> GET /, POST /");
     console.log("  /api/nomina      -> GET /, POST /");
-    console.log("  /api/asistencia  -> GET /, POST /qr, GET /empleado/:id, GET /empleado/:id/qr");
+    console.log("  /api/asistencia  -> GET /, POST /qr, PUT /:id, GET /empleado/:id[/qr]");
     console.log("  /api/horarios    -> GET/POST /turnos, POST /asignaciones, GET /empleado/:id[/hoy|/semana]");
 });
 

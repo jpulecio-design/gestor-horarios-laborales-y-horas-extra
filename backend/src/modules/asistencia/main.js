@@ -37,6 +37,28 @@ async function iniciar() {
                 console.log("Imagen guardada en " + archivo);
             }
 
+        } else if (opcion === "5") {
+            let id = consola.pedirId("ID del marcaje a corregir");
+            let actual = await repositorio.buscarPorId(id);
+
+            if (actual === null) {
+                console.log("ERROR: no existe un marcaje con ese id.");
+            } else {
+                console.log("Actual -> " + actual.tipo + " | " + actual.fechaHora +
+                    " | " + actual.estado + " | " + (actual.observacion || ""));
+                let tipo = consola.pedirConDefecto("Tipo (Entrada/Salida)", actual.tipo);
+                let fechaHora = consola.pedirConDefecto("Fecha y hora (AAAA-MM-DD HH:MM:SS)", actual.fechaHora);
+                let observacion = consola.pedirConDefecto("Observación", actual.observacion);
+                let estado = consola.pedirConDefecto("Estado (Activo/Anulado)", actual.estado);
+                let resultado = await controlador.corregirRegistro(id, {
+                    tipo: tipo,
+                    fechaHora: fechaHora,
+                    observacion: observacion,
+                    estado: estado
+                });
+                console.log(resultado.mensaje);
+            }
+
         } else if (opcion === "0") {
             continuar = false;
             console.log("Hasta luego.");

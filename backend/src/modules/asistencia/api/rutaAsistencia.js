@@ -52,4 +52,20 @@ router.post("/qr", async (req, res) => {
     }
 });
 
+// PUT /api/asistencia/:id -> corrige un marcaje (CU10)
+// body (parcial): { "tipo": "Salida", "fechaHora": "2026-08-10 08:03:00",
+//                   "observacion": "llegó tarde", "estado": "Activo" }
+router.put("/:id", async (req, res) => {
+    try {
+        const resultado = await controlador.corregirRegistro(req.params.id, req.body);
+        if (resultado.exito) {
+            res.json(resultado.datos);
+        } else {
+            res.status(400).json({ error: resultado.mensaje });
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 module.exports = router;
