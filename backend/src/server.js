@@ -13,6 +13,7 @@ const servidor = app.listen(PORT, () => {
     console.log("  /api/asistencia  -> GET /, POST /qr, PUT /:id, GET /empleado/:id[/qr]");
     console.log("  /api/horarios    -> GET/POST /turnos, POST /asignaciones, GET /empleado/:id[/hoy|/semana]");
     console.log("  /api/monitoreo   -> GET /general, GET /empleado/:id (query desde, hasta)");
+    console.log("  /api/reportes    -> GET /monitoreo.xlsx (query desde, hasta)");
 });
 
 // Apagado ordenado: cierra el servidor y devuelve las conexiones al pool.

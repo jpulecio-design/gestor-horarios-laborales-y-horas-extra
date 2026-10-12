@@ -3,3 +3,6 @@ node_modules/
 
 # Imagenes de QR generadas por la consola de asistencia
 qr-empleado-*.png
+
+# Reportes de Excel generados por la consola de reportes
+reporte-*.xlsx
