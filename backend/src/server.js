@@ -10,6 +10,7 @@ const servidor = app.listen(PORT, () => {
     console.log("  /api/empleados   -> GET /, POST /, PUT /:id");
     console.log("  /api/horas-extra -> GET /, POST /");
     console.log("  /api/nomina      -> GET /, POST /");
+    console.log("  /api/asistencia  -> GET /, POST /qr, GET /empleado/:id, GET /empleado/:id/qr");
 });
 
 // Apagado ordenado: cierra el servidor y devuelve las conexiones al pool.

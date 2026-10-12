@@ -1,3 +1,5 @@
+const crypto = require("crypto");
+
 const database = require("../../../config/database");
 
 const modeloEmpleado = require("../modelos/empleado");
@@ -5,12 +7,18 @@ const modeloEmpleado = require("../modelos/empleado");
 const COLUMNAS_EMPLEADO =
     "e.id_empleado, e.nombre, e.apellido, e.cedula, e.correo, e.contrasena, " +
     "e.telefono, e.rol, e.estado, e.cargo, e.salario_base, e.telegram_chat_id, " +
+    "e.codigo_qr, " +
     "TO_CHAR(e.fecha_creacion, 'YYYY-MM-DD HH24:MI') AS fecha_creacion, " +
     "TO_CHAR(e.fecha_ingreso, 'YYYY-MM-DD') AS fecha_ingreso";
 
 // Devuelve true si un valor viene vacio
 function estaVacio(valor) {
     return valor === undefined || valor === null || valor === "";
+}
+
+// Genera un token unico que va dentro del QR del empleado.
+function generarCodigoQr() {
+    return "EMPQR-" + crypto.randomUUID();
 }
 
 // Convierte el salario escrito como texto en número o null si esta vacio
@@ -65,6 +73,22 @@ function buscarEmpleadoPorId(id) {
         });
 }
 
+// devuelve una promesa con el empleado dueño de ese codigo QR o null si no existe
+function buscarEmpleadoPorCodigoQr(codigoQr) {
+    let sql =
+        "SELECT " + COLUMNAS_EMPLEADO + " " +
+        "FROM EMPLEADO e " +
+        "WHERE e.codigo_qr = :codigoQr AND e.rol = 'Empleado'";
+
+    return database.ejecutar(sql, { codigoQr: codigoQr })
+        .then(function (resultado) {
+            if (resultado.rows.length === 0) {
+                return null;
+            }
+            return modeloEmpleado.crearEmpleadoDesdeFila(resultado.rows[0]);
+        });
+}
+
 // Devuelve una promesa con true si ya existe otro empleado con esa cedula o correo
 
 function existeCedulaOCorreo(cedula, correo, idAIgnorar) {
@@ -89,10 +113,10 @@ function insertarEmpleado(datos) {
 
     let sql =
         "INSERT INTO EMPLEADO " +
-        "  (nombre, apellido, cedula, correo, contrasena, telefono, rol, fecha_ingreso, cargo, salario_base, telegram_chat_id) " +
+        "  (nombre, apellido, cedula, correo, contrasena, telefono, rol, fecha_ingreso, cargo, salario_base, telegram_chat_id, codigo_qr) " +
         "VALUES " +
         "  (:nombre, :apellido, :cedula, :correo, :contrasena, :telefono, 'Empleado', " +
-        "   TO_DATE(:fechaIngreso, 'YYYY-MM-DD'), :cargo, :salarioBase, :telegramChatId) " +
+        "   TO_DATE(:fechaIngreso, 'YYYY-MM-DD'), :cargo, :salarioBase, :telegramChatId, :codigoQr) " +
         "RETURNING id_empleado INTO :id";
 
     let parametros = {
@@ -106,6 +130,7 @@ function insertarEmpleado(datos) {
         cargo: datos.cargo,
         salarioBase: salarioANumero(datos.salarioBase),
         telegramChatId: datos.telegramChatId,
+        codigoQr: generarCodigoQr(),
         id: { dir: database.oracledb.BIND_OUT, type: database.oracledb.NUMBER }
     };
 
@@ -197,10 +222,36 @@ function guardarContacto(idEmpleado, datos) {
         });
 }
 
+// CODIGO QR
+
+// Devuelve el codigo QR del empleado; si aun no tiene (empleados antiguos)
+// le genera uno y lo guarda. Devuelve null si el empleado no existe.
+function asegurarCodigoQr(id) {
+    return buscarEmpleadoPorId(id)
+        .then(function (empleado) {
+            if (empleado === null) {
+                return null;
+            }
+            if (!estaVacio(empleado.codigoQr)) {
+                return empleado.codigoQr;
+            }
+
+            let codigo = generarCodigoQr();
+            let sql = "UPDATE EMPLEADO SET codigo_qr = :codigo WHERE id_empleado = :id";
+
+            return database.ejecutar(sql, { codigo: codigo, id: id })
+                .then(function () {
+                    return codigo;
+                });
+        });
+}
+
 module.exports = {
     obtenerTodos: obtenerTodos,
     buscarEmpleadoPorId: buscarEmpleadoPorId,
+    buscarEmpleadoPorCodigoQr: buscarEmpleadoPorCodigoQr,
     existeCedulaOCorreo: existeCedulaOCorreo,
     insertarEmpleado: insertarEmpleado,
-    actualizarEmpleado: actualizarEmpleado
+    actualizarEmpleado: actualizarEmpleado,
+    asegurarCodigoQr: asegurarCodigoQr
 };
