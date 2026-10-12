@@ -2,7 +2,7 @@ const consola = require("./cli/consola");
 const controlador = require("./app/controladorNomina");
 const repositorio = require("./datos/repositorioNomina");
 
-function iniciar() {
+async function iniciar() {
     let continuar = true;
 
     while (continuar) {
@@ -10,7 +10,7 @@ function iniciar() {
 
         if (opcion === "1") {
             let datos = consola.pedirDatosNomina(null);
-            let resultado = controlador.registrarNomina(datos);
+            let resultado = await controlador.registrarNomina(datos);
 
             if (resultado.exito) {
                 consola.mostrarNomina(resultado.datos);
@@ -19,11 +19,11 @@ function iniciar() {
             }
 
         } else if (opcion === "2") {
-            consola.mostrarNominas(repositorio.obtenerTodas());
+            consola.mostrarNominas(await repositorio.obtenerTodas());
 
         } else if (opcion === "3") {
             let id = consola.pedirId("ID del empleado");
-            consola.mostrarNominas(repositorio.obtenerPorEmpleado(id));
+            consola.mostrarNominas(await repositorio.obtenerPorEmpleado(id));
 
         } else if (opcion === "0") {
             continuar = false;
@@ -35,4 +35,6 @@ function iniciar() {
     }
 }
 
-iniciar();
+iniciar().catch(function (error) {
+    console.log("ERROR: " + error.message);
+});

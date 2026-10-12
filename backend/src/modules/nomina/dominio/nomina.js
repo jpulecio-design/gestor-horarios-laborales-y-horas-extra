@@ -1,10 +1,8 @@
-const estado = require("../datos/estado");
-
-// aqui queda armada la nomina con la liquidacion ya calculada
-// el objeto de liquidacion llega desde el servicio para guardar todos los valores en la nomina
+// Arma el objeto nomina con la liquidacion ya calculada por el dominio.
+// El id, el estado y la fecha de creacion los asigna la base de datos,
+// por eso aqui no aparecen.
 function crearNomina(datos, liquidacion) {
-    let nomina = {
-        id: estado.contadorId,
+    return {
         empleadoId: datos.empleadoId,
         periodo: datos.periodo,
         horasRecargoNocturno: datos.horasRecargoNocturno,
@@ -18,14 +16,8 @@ function crearNomina(datos, liquidacion) {
         salud: liquidacion.salud,
         pension: liquidacion.pension,
         totalDeducciones: liquidacion.totalDeducciones,
-        netoPagar: liquidacion.netoPagar,
-        estado: "Activo",
-        fechaCreacion: new Date().toLocaleString()
+        netoPagar: liquidacion.netoPagar
     };
-
-    estado.contadorId = estado.contadorId + 1; // subimos el contador para que el proximo tenga otro id
-
-    return nomina;
 }
 
 module.exports = {
