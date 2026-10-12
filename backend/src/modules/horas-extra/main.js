@@ -1,8 +1,8 @@
-const consola = require("./vistas/consola");
-const controlador = require("./controladores/controladorHorasExtra");
-const repositorio = require("./repositorios/repositorioHorasExtra");
+const consola = require("./cli/consola");
+const controlador = require("./app/controladorHorasExtra");
+const repositorio = require("./datos/repositorioHorasExtra");
 
-function iniciar() {
+async function iniciar() {
     let continuar = true;
 
     while (continuar) {
@@ -10,15 +10,15 @@ function iniciar() {
 
         if (opcion === "1") {
             let datos = consola.pedirDatosHoraExtra(null);
-            let resultado = controlador.registrarHoraExtra(datos);
+            let resultado = await controlador.registrarHoraExtra(datos);
             console.log(resultado.mensaje);
 
         } else if (opcion === "2") {
-            consola.mostrarHorasExtras(repositorio.obtenerTodas());
+            consola.mostrarHorasExtras(await repositorio.obtenerTodas());
 
         } else if (opcion === "3") {
             let id = consola.pedirId("ID del empleado");
-            consola.mostrarHorasExtras(repositorio.obtenerPorEmpleado(id));
+            consola.mostrarHorasExtras(await repositorio.obtenerPorEmpleado(id));
 
         } else if (opcion === "0") {
             continuar = false;
@@ -30,4 +30,6 @@ function iniciar() {
     }
 }
 
-iniciar();
+iniciar().catch(function (error) {
+    console.log("ERROR: " + error.message);
+});
