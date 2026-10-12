@@ -1,24 +1,16 @@
-const estado = require("../datos/estado");
-
-// aqui queda armada la hora extra con su valor ya calculado
-// el valor entra ya calculado por el servicio para no mezclar responsabilidades
+// Arma el objeto hora extra con el valor ya calculado por el servicio.
+// El id, el estado y la fecha de creacion los asigna la base de datos,
+// por eso aqui no aparecen.
 function crearHoraExtra(datos, valorCalculado) {
-    let horaExtra = {
-        id: estado.contadorId,
+    return {
         empleadoId: datos.empleadoId,
         fecha: datos.fecha,
         tipo: datos.tipo,
         cantidadHoras: datos.cantidadHoras,
         valorHoraBase: datos.valorHoraBase,
         factorRecargo: datos.factorRecargo,
-        valor: valorCalculado,
-        estado: "Activo",
-        fechaCreacion: new Date().toLocaleString()
+        valor: valorCalculado
     };
-
-    estado.contadorId = estado.contadorId + 1; // subimos el contador para que el proximo tenga otro id
-
-    return horaExtra;
 }
 
 module.exports = {

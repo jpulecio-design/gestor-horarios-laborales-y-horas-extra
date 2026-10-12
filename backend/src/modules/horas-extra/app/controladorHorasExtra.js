@@ -5,14 +5,17 @@ const repositorioEmpleados = require("../../empleados/repositorios/repositorioEm
 
 // registra una hora extra nueva
 // devuelve { exito: true, datos } si se guardo y { exito: false, mensaje } si no
-function registrarHoraExtra(datos) {
+// los errores de base de datos se propagan como promesa rechazada
+async function registrarHoraExtra(datos) {
     let empleadoId = Number(datos.empleadoId);
 
     if (isNaN(empleadoId) || empleadoId <= 0) {
         return { exito: false, mensaje: "ERROR: el id del empleado es inválido." };
     }
 
-    if (repositorioEmpleados.buscarEmpleadoPorId(empleadoId) === null) {
+    let empleado = await repositorioEmpleados.buscarEmpleadoPorId(empleadoId);
+
+    if (empleado === null) {
         return { exito: false, mensaje: "ERROR: no existe un empleado con ese id." };
     }
 
@@ -39,19 +42,19 @@ function registrarHoraExtra(datos) {
 
     let nuevaHoraExtra = horaExtra.crearHoraExtra({
         empleadoId: empleadoId,
-        fecha: datos.fecha,
+        fecha: datos.fecha.trim(),
         tipo: tipo,
         cantidadHoras: cantidadHoras,
         valorHoraBase: valorHoraBase,
         factorRecargo: calculador.factorRecargo(tipo)
     }, valorCalculado);
 
-    repositorio.agregarHoraExtra(nuevaHoraExtra);
+    let guardada = await repositorio.agregarHoraExtra(nuevaHoraExtra);
 
     return {
         exito: true,
-        mensaje: "Hora extra registrada con id " + nuevaHoraExtra.id + ".",
-        datos: nuevaHoraExtra
+        mensaje: "Hora extra registrada con id " + guardada.id + ".",
+        datos: guardada
     };
 }
 

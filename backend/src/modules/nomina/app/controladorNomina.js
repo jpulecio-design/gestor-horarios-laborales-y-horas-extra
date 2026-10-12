@@ -5,14 +5,17 @@ const repositorioEmpleados = require("../../empleados/repositorios/repositorioEm
 
 // registra una nomina nueva con su liquidacion calculada
 // devuelve { exito: true, datos } si se guardo y { exito: false, mensaje } si no
-function registrarNomina(datos) {
+// los errores de base de datos se propagan como promesa rechazada
+async function registrarNomina(datos) {
     let empleadoId = Number(datos.empleadoId);
 
     if (isNaN(empleadoId) || empleadoId <= 0) {
         return { exito: false, mensaje: "ERROR: el id del empleado es inválido." };
     }
 
-    if (repositorioEmpleados.buscarEmpleadoPorId(empleadoId) === null) {
+    let empleado = await repositorioEmpleados.buscarEmpleadoPorId(empleadoId);
+
+    if (empleado === null) {
         return { exito: false, mensaje: "ERROR: no existe un empleado con ese id." };
     }
 
@@ -22,7 +25,7 @@ function registrarNomina(datos) {
 
     let periodo = datos.periodo.trim();
 
-    if (repositorio.existePeriodoEmpleado(empleadoId, periodo)) {
+    if (await repositorio.existePeriodoEmpleado(empleadoId, periodo)) {
         return { exito: false, mensaje: "ERROR: ya existe una nómina para ese empleado en ese periodo." };
     }
 
@@ -41,7 +44,7 @@ function registrarNomina(datos) {
         horasRecargoFestivo = 0;
     }
 
-    let liquida = liquidacion.liquidar({
+    let liquida = await liquidacion.liquidar({
         empleadoId: empleadoId,
         periodo: periodo,
         salarioBase: salarioBase,
@@ -56,12 +59,12 @@ function registrarNomina(datos) {
         horasRecargoFestivo: horasRecargoFestivo
     }, liquida);
 
-    repositorio.agregarNomina(nuevaNomina);
+    let guardada = await repositorio.agregarNomina(nuevaNomina);
 
     return {
         exito: true,
-        mensaje: "Nómina del periodo " + periodo + " registrada con id " + nuevaNomina.id + ".",
-        datos: nuevaNomina
+        mensaje: "Nómina del periodo " + periodo + " registrada con id " + guardada.id + ".",
+        datos: guardada
     };
 }
 

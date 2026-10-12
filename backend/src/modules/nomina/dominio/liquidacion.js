@@ -22,22 +22,25 @@ function pagoRecargo(valorHoraCalculado, horas, porcentaje) {
 }
 
 // suma el valor de las horas extra del empleado dentro del periodo
+// devuelve una promesa porque consulta la base de datos
 function pagoHorasExtra(empleadoId, periodo) {
-    let lista = repositorioHorasExtra.obtenerPorEmpleadoPeriodo(empleadoId, periodo);
-    let total = 0;
-    for (let i = 0; i < lista.length; i++) {
-        total = total + lista[i].valor;
-    }
-    return redondear(total);
+    return repositorioHorasExtra.obtenerPorEmpleadoPeriodo(empleadoId, periodo)
+        .then(function (lista) {
+            let total = 0;
+            for (let i = 0; i < lista.length; i++) {
+                total = total + lista[i].valor;
+            }
+            return redondear(total);
+        });
 }
 
-// liquida la nomina y devuelve el desglose completo
-function liquidar(datos) {
+// liquida la nomina y devuelve una promesa con el desglose completo
+async function liquidar(datos) {
     let vh = valorHora(datos.salarioBase);
 
     let recNocturno = pagoRecargo(vh, datos.horasRecargoNocturno, RECARGO_NOCTURNO);
     let recFestivo = pagoRecargo(vh, datos.horasRecargoFestivo, RECARGO_FESTIVO);
-    let extras = pagoHorasExtra(datos.empleadoId, datos.periodo);
+    let extras = await pagoHorasExtra(datos.empleadoId, datos.periodo);
 
     let totalDevengado = redondear(datos.salarioBase + recNocturno + recFestivo + extras);
 

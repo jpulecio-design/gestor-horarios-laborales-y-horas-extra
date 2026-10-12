@@ -28,6 +28,8 @@ function crearEmpleadoDesdeFila(fila) {
         fechaIngreso: textoOVacio(fila.FECHA_INGRESO),
         cargo: textoOVacio(fila.CARGO),
         salarioBase: textoOVacio(fila.SALARIO_BASE),
+        // token unico que va dentro del QR del empleado (CU03)
+        codigoQr: textoOVacio(fila.CODIGO_QR),
         // si esta vacio el aviso le llega al administrador
         telegramChatId: textoOVacio(fila.TELEGRAM_CHAT_ID),
 
