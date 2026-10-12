@@ -1,5 +1,7 @@
 const express = require("express");
 
+const autenticar = require("../middlewares/autenticar");
+
 const rutaAutenticacion = require("./modules/auth/rutaAutenticacion");
 const rutaTest = require("./modules/test/rutas/rutaTest");
 const rutaEmpleados = require("./modules/empleados/rutas/rutaEmpleados");
@@ -14,8 +16,13 @@ const app = express();
 
 app.use(express.json());
 
+// Rutas publicas: inicio de sesion y pruebas de salud.
 app.use("/api/auth", rutaAutenticacion);
 app.use("/api/test", rutaTest);
+
+// A partir de aqui todo exige un token valido (Authorization: Bearer ...).
+app.use("/api", autenticar);
+
 app.use("/api/empleados", rutaEmpleados);
 app.use("/api/horas-extra", rutaHorasExtra);
 app.use("/api/nomina", rutaNomina);

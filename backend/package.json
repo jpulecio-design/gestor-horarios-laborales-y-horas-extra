@@ -3,6 +3,7 @@
     "dotenv": "^17.4.2",
     "exceljs": "^4.4.0",
     "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
     "oracledb": "^7.0.1",
     "prompt-sync": "^4.2.0",
     "qrcode": "^1.5.4"
@@ -16,6 +17,11 @@
   },
   "scripts": {
     "start": "node src/server.js",
+    "db:crear": "node scripts/db.js crear",
+    "db:datos": "node scripts/db.js datos",
+    "db:reiniciar": "node scripts/db.js reiniciar",
+    "db:verificar": "node scripts/db.js verificar",
+    "db:hashear": "node scripts/hashear-contrasenas.js",
     "test": "node tests/empleados.prueba.js && node tests/horas-extra.prueba.js && node tests/nomina.prueba.js && node tests/asistencia.prueba.js && node tests/asistencia-correccion.prueba.js && node tests/horarios.prueba.js && node tests/monitoreo.prueba.js && node tests/reportes.prueba.js && node tests/integracion.prueba.js"
   },
   "keywords": [],
