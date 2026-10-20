@@ -113,9 +113,9 @@ function insertarEmpleado(datos) {
 
     let sql =
         "INSERT INTO EMPLEADO " +
-        "  (nombre, apellido, cedula, correo, contrasena, telefono, rol, fecha_ingreso, cargo, salario_base, telegram_chat_id, codigo_qr) " +
+        "  (nombre, apellido, cedula, correo, contrasena, telefono, rol, estado, fecha_ingreso, cargo, salario_base, telegram_chat_id, codigo_qr) " +
         "VALUES " +
-        "  (:nombre, :apellido, :cedula, :correo, :contrasena, :telefono, 'Empleado', " +
+        "  (:nombre, :apellido, :cedula, :correo, :contrasena, :telefono, 'Empleado', :estado, " +
         "   TO_DATE(:fechaIngreso, 'YYYY-MM-DD'), :cargo, :salarioBase, :telegramChatId, :codigoQr) " +
         "RETURNING id_empleado INTO :id";
 
