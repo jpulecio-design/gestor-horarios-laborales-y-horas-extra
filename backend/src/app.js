@@ -9,6 +9,7 @@ const rutaAsistencia = require("./modules/asistencia/api/rutaAsistencia");
 const rutaHorarios = require("./modules/horarios-turnos/api/rutaHorarios");
 const rutaMonitoreo = require("./modules/monitoreo/api/rutaMonitoreo");
 const rutaReportes = require("./modules/reportes/api/rutaReportes");
+const rutaBackups = require("./modules/backups/rutas/rutaBackups");
 
 const app = express();
 
@@ -23,5 +24,6 @@ app.use("/api/asistencia", rutaAsistencia);
 app.use("/api/horarios", rutaHorarios);
 app.use("/api/monitoreo", rutaMonitoreo);
 app.use("/api/reportes", rutaReportes);
+app.use("/api/backups", rutaBackups);
 
 module.exports = app;
