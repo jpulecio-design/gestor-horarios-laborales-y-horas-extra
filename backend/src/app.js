@@ -5,6 +5,7 @@ const rutaTest = require("./modules/test/rutas/rutaTest");
 const rutaEmpleados = require("./modules/empleados/rutas/rutaEmpleados");
 const rutaHorasExtra = require("./modules/horas-extra/rutas/rutaHorasExtra");
 const rutaNomina = require("./modules/nomina/rutas/rutaNomina");
+const rutaBackups = require("./modules/backups/rutas/rutaBackups");
 
 const app = express();
 
@@ -15,5 +16,6 @@ app.use("/api/test", rutaTest);
 app.use("/api/empleados", rutaEmpleados);
 app.use("/api/horas-extra", rutaHorasExtra);
 app.use("/api/nomina", rutaNomina);
+app.use("/api/backups", rutaBackups);
 
 module.exports = app;
