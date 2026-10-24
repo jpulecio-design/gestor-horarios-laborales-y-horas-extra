@@ -1,5 +1,6 @@
 const app = require("./app");
 const database = require("./config/database");
+const tareaBackupAutomatico = require("./modules/backups/tareas/tareaBackupAutomatico");
 
 const PORT = Number(process.env.PORT) || 3000;
 
@@ -14,6 +15,9 @@ const servidor = app.listen(PORT, () => {
     console.log("  /api/horarios    -> GET/POST /turnos, POST /asignaciones, GET /empleado/:id[/hoy|/semana]");
     console.log("  /api/monitoreo   -> GET /general, GET /empleado/:id (query desde, hasta)");
     console.log("  /api/reportes    -> GET /monitoreo.xlsx (query desde, hasta)");
+    console.log("  /api/backups     -> GET /, POST /, GET /:id/descarga, GET /:id/excel, GET /:id/comparacion  (solo Administrador)");
+
+    tareaBackupAutomatico.iniciar();
 });
 
 // Apagado ordenado: cierra el servidor y devuelve las conexiones al pool.
