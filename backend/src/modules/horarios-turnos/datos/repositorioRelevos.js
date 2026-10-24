@@ -137,6 +137,27 @@ function obtenerHorariosDesde(empleadoId, fechaDesde) {
         });
 }
 
+function obtenerCompanerosActivos(empleadoId) {
+    let sql =
+        "SELECT e.id_empleado, e.nombre, e.apellido " +
+        "FROM EMPLEADO e " +
+        "WHERE e.rol = 'Empleado' " +
+        "AND e.estado = 'Activo' " +
+        "AND e.id_empleado <> :empleadoId " +
+        "ORDER BY e.nombre, e.apellido";
+
+    return database.ejecutar(sql, { empleadoId: empleadoId })
+        .then(function (resultado) {
+            return resultado.rows.map(function (fila) {
+                return {
+                    id: fila.ID_EMPLEADO,
+                    nombre: fila.NOMBRE,
+                    apellido: fila.APELLIDO
+                };
+            });
+        });
+}
+
 // pasa SOLO ese dia al compañero
 function reasignarHorario(idHorario, idNuevoEmpleado) {
     let sql =
@@ -245,6 +266,7 @@ module.exports = {
     materializarHorario: materializarHorario,
     obtenerFechasCedidas: obtenerFechasCedidas,
     obtenerHorariosDesde: obtenerHorariosDesde,
+    obtenerCompanerosActivos: obtenerCompanerosActivos,
     reasignarHorario: reasignarHorario,
     existeSolicitudPendiente: existeSolicitudPendiente,
     agregarSolicitud: agregarSolicitud,

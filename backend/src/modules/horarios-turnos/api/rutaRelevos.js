@@ -2,8 +2,17 @@ const express = require("express");
 
 const controlador = require("../app/controladorRelevos");
 const repositorio = require("../datos/repositorioRelevos");
+const { autorizar } = require("../../../../middlewares/autorizar");
 
 const router = express.Router();
+
+router.get("/companeros", autorizar("Administrador", "Contadora", "Empleado"), async (req, res) => {
+    try {
+        res.json(await repositorio.obtenerCompanerosActivos(Number(req.usuario.id)));
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 router.get("/agenda/:empleadoId", async (req, res) => {
     try {
