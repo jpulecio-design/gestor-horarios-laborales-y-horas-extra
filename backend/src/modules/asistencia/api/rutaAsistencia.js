@@ -3,10 +3,14 @@ const express = require("express");
 const controlador = require("../app/controladorAsistencia");
 const repositorio = require("../datos/repositorioAsistencia");
 
+const { autorizar, autorizarPropio } = require("../../../../middlewares/autorizar");
+
 const router = express.Router();
 
+const GESTION = ["Administrador", "Contadora"];
+
 // GET /api/asistencia -> todos los marcajes
-router.get("/", async (req, res) => {
+router.get("/", autorizar(...GESTION), async (req, res) => {
     try {
         res.json(await repositorio.obtenerTodos());
     } catch (error) {
@@ -15,7 +19,7 @@ router.get("/", async (req, res) => {
 });
 
 // GET /api/asistencia/empleado/:id -> marcajes de un empleado
-router.get("/empleado/:id", async (req, res) => {
+router.get("/empleado/:id", autorizarPropio(...GESTION), async (req, res) => {
     try {
         res.json(await repositorio.obtenerPorEmpleado(Number(req.params.id)));
     } catch (error) {
@@ -24,7 +28,7 @@ router.get("/empleado/:id", async (req, res) => {
 });
 
 // GET /api/asistencia/empleado/:id/qr -> codigo e imagen QR del empleado
-router.get("/empleado/:id/qr", async (req, res) => {
+router.get("/empleado/:id/qr", autorizarPropio(...GESTION), async (req, res) => {
     try {
         const qr = await controlador.obtenerQrDeEmpleado(Number(req.params.id));
         if (qr === null) {
@@ -39,7 +43,7 @@ router.get("/empleado/:id/qr", async (req, res) => {
 
 // POST /api/asistencia/qr -> registra entrada/salida escaneando un QR
 // body: { "codigoQr": "EMPQR-..." }
-router.post("/qr", async (req, res) => {
+router.post("/qr", autorizar("Administrador", "Contadora", "Empleado"), async (req, res) => {
     try {
         const resultado = await controlador.registrarPorQr(req.body.codigoQr);
         if (resultado.exito) {
@@ -55,7 +59,7 @@ router.post("/qr", async (req, res) => {
 // PUT /api/asistencia/:id -> corrige un marcaje (CU10)
 // body (parcial): { "tipo": "Salida", "fechaHora": "2026-08-10 08:03:00",
 //                   "observacion": "llegó tarde", "estado": "Activo" }
-router.put("/:id", async (req, res) => {
+router.put("/:id", autorizar(...GESTION), async (req, res) => {
     try {
         const resultado = await controlador.corregirRegistro(req.params.id, req.body);
         if (resultado.exito) {

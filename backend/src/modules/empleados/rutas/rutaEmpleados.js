@@ -4,12 +4,17 @@ const controlador = require("../controladores/controladorEmpleados");
 
 const repositorio = require("../repositorios/repositorioEmpleados");
 
+const { autorizar } = require("../../../../middlewares/autorizar");
+
 const router = express.Router();
+
+const ADMINISTRADOR = "Administrador";
+const LECTURA_EMPLEADOS = ["Administrador", "Contadora"];
 
 // GET /api/empleados
 // Devuelve todos los empleados
 
-router.get("/", (req, res) => {
+router.get("/", autorizar(...LECTURA_EMPLEADOS), (req, res) => {
 
     repositorio.obtenerTodos()
         .then(function (empleados) {
@@ -26,7 +31,7 @@ router.get("/", (req, res) => {
 // GET /api/empleados/:id
 // Devuelve un empleado por ID
 
-router.get("/:id", (req, res) => {
+router.get("/:id", autorizar(...LECTURA_EMPLEADOS), (req, res) => {
 
     repositorio.buscarEmpleadoPorId(Number(req.params.id))
         .then(function (empleado) {
@@ -57,7 +62,7 @@ router.get("/:id", (req, res) => {
 // POST /api/empleados
 // Registra un empleado nuevo
 
-router.post("/", (req, res) => {
+router.post("/", autorizar(ADMINISTRADOR), (req, res) => {
 
     controlador.registrarEmpleado(req.body)
         .then(function (resultado) {
@@ -93,7 +98,7 @@ router.post("/", (req, res) => {
 // PUT /api/empleados/:id
 // Edita un empleado
 
-router.put("/:id", (req, res) => {
+router.put("/:id", autorizar(ADMINISTRADOR), (req, res) => {
 
     controlador.guardarEdicion(
         Number(req.params.id),
