@@ -109,7 +109,7 @@ function registrarEmpleado(datos) {
 
             // IMPORTANTE:
             // devolvemos el ID real generado por Oracle
-            return true;
+            return idNuevo;
         })
 
         .catch(function (error) {
@@ -127,6 +127,11 @@ function registrarEmpleado(datos) {
 // devuelve una promesa con true o false
 function guardarEdicion(id, datosNuevos) {
 
+    // si no mandan estado o contraseña se conservan los que ya tenia
+    // (completarDatos pondria el estado en "Activo" y reactivaria a un inactivo)
+    let sinEstado = datosNuevos.estado === undefined || datosNuevos.estado === "";
+    let sinContrasena = datosNuevos.contrasena === undefined || datosNuevos.contrasena === "";
+
     completarDatos(datosNuevos);
 
     let empleadoViejo = null;
@@ -142,6 +147,14 @@ function guardarEdicion(id, datosNuevos) {
             }
 
             empleadoViejo = empleado;
+
+            if (sinEstado) {
+                datosNuevos.estado = empleado.usuario.estado;
+            }
+
+            if (sinContrasena) {
+                datosNuevos.contrasena = empleado.usuario.contrasena;
+            }
 
             let error = validarDatos(datosNuevos);
 

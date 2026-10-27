@@ -52,7 +52,8 @@ function Empleados() {
         apellido: detalle.usuario.apellido,
         cedula: detalle.usuario.cedula,
         correo: detalle.usuario.correo,
-        contrasena: detalle.usuario.contrasena,
+        // el backend ya no envía la contraseña; vacía = se conserva la actual
+        contrasena: '',
         telefono: detalle.usuario.telefono,
         fechaIngreso: detalle.fechaIngreso,
         cargo: detalle.cargo,
@@ -126,8 +127,8 @@ function Empleados() {
               <input type="email" value={form.correo} onChange={(e) => cambiar('correo', e.target.value)} required />
             </label>
             <label className="campo">
-              Contraseña *
-              <input value={form.contrasena} onChange={(e) => cambiar('contrasena', e.target.value)} required />
+              {editandoId ? 'Contraseña (vacía = no cambiar)' : 'Contraseña *'}
+              <input value={form.contrasena} onChange={(e) => cambiar('contrasena', e.target.value)} required={!editandoId} />
             </label>
             <label className="campo">
               Teléfono

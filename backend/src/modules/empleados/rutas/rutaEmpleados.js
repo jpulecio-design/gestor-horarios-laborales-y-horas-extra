@@ -11,6 +11,17 @@ const router = express.Router();
 const ADMINISTRADOR = "Administrador";
 const LECTURA_EMPLEADOS = ["Administrador", "Contadora"];
 
+// quita el hash de la contraseña para que nunca salga del servidor
+function sinContrasena(empleado) {
+    if (empleado === null || empleado === undefined) {
+        return empleado;
+    }
+    let copia = Object.assign({}, empleado);
+    copia.usuario = Object.assign({}, empleado.usuario);
+    delete copia.usuario.contrasena;
+    return copia;
+}
+
 // GET /api/empleados
 // Devuelve todos los empleados
 
@@ -18,7 +29,7 @@ router.get("/", autorizar(...LECTURA_EMPLEADOS), (req, res) => {
 
     repositorio.obtenerTodos()
         .then(function (empleados) {
-            res.json(empleados);
+            res.json(empleados.map(sinContrasena));
         })
         .catch(function (error) {
             res.status(500).json({
@@ -44,7 +55,7 @@ router.get("/:id", autorizar(...LECTURA_EMPLEADOS), (req, res) => {
 
             } else {
 
-                res.json(empleado);
+                res.json(sinContrasena(empleado));
 
             }
 
@@ -80,7 +91,7 @@ router.post("/", autorizar(ADMINISTRADOR), (req, res) => {
             return repositorio.buscarEmpleadoPorId(resultado)
                 .then(function (nuevo) {
 
-                    res.status(201).json(nuevo);
+                    res.status(201).json(sinContrasena(nuevo));
 
                 });
 
@@ -120,7 +131,7 @@ router.put("/:id", autorizar(ADMINISTRADOR), (req, res) => {
             )
                 .then(function (empleado) {
 
-                    res.json(empleado);
+                    res.json(sinContrasena(empleado));
 
                 });
 
