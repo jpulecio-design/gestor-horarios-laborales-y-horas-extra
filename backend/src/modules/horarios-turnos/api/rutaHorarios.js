@@ -9,6 +9,8 @@ const { autorizar, autorizarPropio } = require("../../../../middlewares/autoriza
 
 const router = express.Router();
 
+const GESTION = ["Administrador", "Contadora"];
+
 // El archivo se guarda en memoria (no en disco) y solo se acepta un .xlsx de hasta 5 MB
 const subida = multer({
     storage: multer.memoryStorage(),
@@ -102,12 +104,12 @@ router.get("/tipos-turno", (req, res) => {
     res.json(controladorProgramacion.tiposTurno());
 });
 
-// GET /api/horarios/programacion/:empleadoId?desde=AAAA-MM-DD&hasta=AAAA-MM-DD
+// GET /api/horarios/programacion/:id?desde=AAAA-MM-DD&hasta=AAAA-MM-DD
 // Dias programados del empleado en el periodo (semana, mes...).
-router.get("/programacion/:empleadoId", async (req, res) => {
+router.get("/programacion/:id", autorizarPropio(...GESTION), async (req, res) => {
     try {
         const resultado = await controladorProgramacion.consultarProgramacion(
-            req.params.empleadoId, req.query.desde, req.query.hasta);
+            req.params.id, req.query.desde, req.query.hasta);
         if (resultado.exito) {
             res.json(resultado.datos);
         } else {
@@ -121,7 +123,7 @@ router.get("/programacion/:empleadoId", async (req, res) => {
 // PUT /api/horarios/programacion/:empleadoId -> crea o actualiza dias de la programacion
 // body: { "dias": [ { "fecha": "2026-11-02", "horaEntrada": "22:00", "horaSalida": "06:00", "tipoTurno": "Nocturno" } ] }
 // Todo o nada: si un dia tiene error o se solapa, no se guarda ninguno.
-router.put("/programacion/:empleadoId", async (req, res) => {
+router.put("/programacion/:empleadoId", autorizar("Administrador"), async (req, res) => {
     try {
         const resultado = await controladorProgramacion.programarDias(
             req.params.empleadoId, req.body ? req.body.dias : undefined);
@@ -136,7 +138,7 @@ router.put("/programacion/:empleadoId", async (req, res) => {
 });
 
 // DELETE /api/horarios/programacion/:empleadoId/:fecha -> quita el turno de ese dia
-router.delete("/programacion/:empleadoId/:fecha", async (req, res) => {
+router.delete("/programacion/:empleadoId/:fecha", autorizar("Administrador"), async (req, res) => {
     try {
         const resultado = await controladorProgramacion.eliminarDia(req.params.empleadoId, req.params.fecha);
         if (resultado.exito) {
@@ -152,7 +154,7 @@ router.delete("/programacion/:empleadoId/:fecha", async (req, res) => {
 // POST /api/horarios/importar -> importa la plantilla de programacion desde Excel (campo "archivo")
 // Columnas (fila 1): empleadoId, fecha, horaEntrada, horaSalida, tipoTurno
 // 201 -> resumen de lo guardado; 400 -> errores con fila y columna (no guarda nada)
-router.post("/importar", recibirArchivo, async (req, res) => {
+router.post("/importar", autorizar("Administrador"), recibirArchivo, async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: "Falta el archivo (campo \"archivo\")." });
     }
