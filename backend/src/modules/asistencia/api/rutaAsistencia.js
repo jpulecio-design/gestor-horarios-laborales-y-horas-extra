@@ -18,32 +18,8 @@ router.get("/", autorizar(...GESTION), async (req, res) => {
     }
 });
 
-// GET /api/asistencia/empleado/:id -> marcajes de un empleado
-router.get("/empleado/:id", autorizarPropio(...GESTION), async (req, res) => {
-    try {
-        res.json(await repositorio.obtenerPorEmpleado(Number(req.params.id)));
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// GET /api/asistencia/empleado/:id/qr -> codigo e imagen QR del empleado
-router.get("/empleado/:id/qr", autorizarPropio(...GESTION), async (req, res) => {
-    try {
-        const qr = await controlador.obtenerQrDeEmpleado(Number(req.params.id));
-        if (qr === null) {
-            res.status(404).json({ error: "No existe un empleado con ese id." });
-        } else {
-            res.json(qr);
-        }
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// POST /api/asistencia/qr -> registra entrada/salida escaneando un QR
-// body: { "codigoQr": "EMPQR-..." }
-router.post("/qr", autorizar("Administrador", "Contadora", "Empleado"), async (req, res) => {
+// POST /api/asistencia/qr -> registrar marcaje por QR
+router.post("/qr", autorizar("Empleado", "Administrador", "Contadora"), async (req, res) => {
     try {
         const resultado = await controlador.registrarPorQr(req.body.codigoQr);
         if (resultado.exito) {
@@ -56,12 +32,47 @@ router.post("/qr", autorizar("Administrador", "Contadora", "Empleado"), async (r
     }
 });
 
-// PUT /api/asistencia/:id -> corrige un marcaje (CU10)
-// body (parcial): { "tipo": "Salida", "fechaHora": "2026-08-10 08:03:00",
-//                   "observacion": "llegó tarde", "estado": "Activo" }
+// PUT /api/asistencia/:id -> corregir marcaje (CU10)
 router.put("/:id", autorizar(...GESTION), async (req, res) => {
     try {
         const resultado = await controlador.corregirRegistro(req.params.id, req.body);
+        if (resultado.exito) {
+            res.json(resultado.datos);
+        } else {
+            res.status(400).json({ error: resultado.mensaje });
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// GET /api/asistencia/empleado/:id -> marcajes de un empleado
+router.get("/empleado/:id", autorizarPropio(...GESTION), async (req, res) => {
+    try {
+        res.json(await repositorio.obtenerPorEmpleado(Number(req.params.id)));
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// GET /api/asistencia/empleado/:id/qr -> obtener QR de un empleado
+router.get("/empleado/:id/qr", autorizarPropio(...GESTION), async (req, res) => {
+    try {
+        const resultado = await controlador.obtenerQrDeEmpleado(Number(req.params.id));
+        if (resultado === null) {
+            res.status(404).json({ error: "No existe un empleado con ese id." });
+        } else {
+            res.json(resultado);
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// GET /api/asistencia/empleado/:id/horas-trabajadas?desde=YYYY-MM-DD&hasta=YYYY-MM-DD
+router.get("/empleado/:id/horas-trabajadas", autorizarPropio(...GESTION), async (req, res) => {
+    try {
+        const resultado = await controlador.obtenerHorasTrabajadas(req.params.id, req.query.desde, req.query.hasta);
         if (resultado.exito) {
             res.json(resultado.datos);
         } else {

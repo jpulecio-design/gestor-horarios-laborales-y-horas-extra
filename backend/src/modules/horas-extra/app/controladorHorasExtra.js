@@ -4,8 +4,6 @@ const calculador = require("../dominio/calculadorHorasExtra");
 const repositorioEmpleados = require("../../empleados/repositorios/repositorioEmpleados");
 
 // registra una hora extra nueva
-// devuelve { exito: true, datos } si se guardo y { exito: false, mensaje } si no
-// los errores de base de datos se propagan como promesa rechazada
 async function registrarHoraExtra(datos) {
     let empleadoId = Number(datos.empleadoId);
 
@@ -19,7 +17,7 @@ async function registrarHoraExtra(datos) {
         return { exito: false, mensaje: "ERROR: no existe un empleado con ese id." };
     }
 
-    if (datos.fecha === undefined || datos.fecha.trim() === "") {
+    if (datos.fecha === undefined || datos.fecha === null || String(datos.fecha).trim() === "") {
         return { exito: false, mensaje: "ERROR: la fecha es obligatoria (AAAA-MM-DD)." };
     }
 
@@ -42,7 +40,7 @@ async function registrarHoraExtra(datos) {
 
     let nuevaHoraExtra = horaExtra.crearHoraExtra({
         empleadoId: empleadoId,
-        fecha: datos.fecha.trim(),
+        fecha: String(datos.fecha).trim(),
         tipo: tipo,
         cantidadHoras: cantidadHoras,
         valorHoraBase: valorHoraBase,
@@ -53,11 +51,49 @@ async function registrarHoraExtra(datos) {
 
     return {
         exito: true,
-        mensaje: "Hora extra registrada con id " + guardada.id + ".",
+        mensaje: "Hora extra registrada con id " + guardada.id + ". Pendiente de aprobación.",
         datos: guardada
     };
 }
 
+async function aprobarHoraExtra(idHoraExtra, aprobadoPorId, observacion) {
+    if (!idHoraExtra) {
+        return { exito: false, mensaje: "ERROR: ID de hora extra requerido." };
+    }
+    if (!aprobadoPorId) {
+        return { exito: false, mensaje: "ERROR: ID del aprobador requerido." };
+    }
+    const existente = await repositorio.buscarPorId(Number(idHoraExtra));
+    if (!existente) {
+        return { exito: false, mensaje: "ERROR: no existe una hora extra con ese id." };
+    }
+    if (existente.estadoAprobacion === "Aprobado") {
+        return { exito: false, mensaje: "ERROR: la hora extra ya se encuentra aprobada." };
+    }
+    const actualizado = await repositorio.aprobarHoraExtra(Number(idHoraExtra), Number(aprobadoPorId), observacion || null);
+    return { exito: true, mensaje: "Hora extra aprobada correctamente.", datos: actualizado };
+}
+
+async function rechazarHoraExtra(idHoraExtra, aprobadoPorId, observacion) {
+    if (!idHoraExtra) {
+        return { exito: false, mensaje: "ERROR: ID de hora extra requerido." };
+    }
+    if (!aprobadoPorId) {
+        return { exito: false, mensaje: "ERROR: ID del aprobador requerido." };
+    }
+    const existente = await repositorio.buscarPorId(Number(idHoraExtra));
+    if (!existente) {
+        return { exito: false, mensaje: "ERROR: no existe una hora extra con ese id." };
+    }
+    if (existente.estadoAprobacion === "Rechazado") {
+        return { exito: false, mensaje: "ERROR: la hora extra ya se encuentra rechazada." };
+    }
+    const actualizado = await repositorio.rechazarHoraExtra(Number(idHoraExtra), Number(aprobadoPorId), observacion || null);
+    return { exito: true, mensaje: "Hora extra rechazada correctamente.", datos: actualizado };
+}
+
 module.exports = {
-    registrarHoraExtra: registrarHoraExtra
+    registrarHoraExtra: registrarHoraExtra,
+    aprobarHoraExtra: aprobarHoraExtra,
+    rechazarHoraExtra: rechazarHoraExtra
 };

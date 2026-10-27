@@ -76,6 +76,21 @@ function obtenerPorEmpleado(empleadoId) {
         });
 }
 
+// devuelve marcajes de un empleado entre fechas (YYYY-MM-DD)
+function obtenerPorEmpleadoEntreFechas(empleadoId, desde, hasta) {
+    let sql =
+        "SELECT " + COLUMNAS + " FROM ASISTENCIA " +
+        "WHERE id_empleado = :empleadoId " +
+        "AND TRUNC(fecha_hora) BETWEEN TO_DATE(:desde, 'YYYY-MM-DD') AND TO_DATE(:hasta, 'YYYY-MM-DD') " +
+        "AND (estado IS NULL OR estado = 'Activo') " +
+        "ORDER BY fecha_hora, id_asistencia";
+
+    return database.ejecutar(sql, { empleadoId: empleadoId, desde: desde, hasta: hasta })
+        .then(function (resultado) {
+            return resultado.rows.map(crearDesdeFila);
+        });
+}
+
 // devuelve una promesa con el ultimo marcaje del empleado o null si no tiene
 function obtenerUltimoPorEmpleado(empleadoId) {
     let sql =
@@ -122,6 +137,7 @@ module.exports = {
     obtenerTodos: obtenerTodos,
     buscarPorId: buscarPorId,
     obtenerPorEmpleado: obtenerPorEmpleado,
+    obtenerPorEmpleadoEntreFechas: obtenerPorEmpleadoEntreFechas,
     obtenerUltimoPorEmpleado: obtenerUltimoPorEmpleado,
     actualizarRegistro: actualizarRegistro
 };

@@ -3,6 +3,8 @@ import cliente from './cliente'
 export const apiAuth = {
   iniciarSesion: (username, password) =>
     cliente.post('/auth/login', { username, password }).then((r) => r.data),
+  cambiarContrasena: (contrasenaActual, contrasenaNueva) =>
+    cliente.post('/auth/cambiar-contrasena', { contrasenaActual, contrasenaNueva }).then((r) => r.data),
 }
 
 export const apiTest = {
@@ -19,11 +21,18 @@ export const apiEmpleados = {
 }
 
 export const apiHorasExtra = {
-  listar: () => cliente.get('/horas-extra').then((r) => r.data),
+  listar: (estadoAprobacion) =>
+    cliente
+      .get('/horas-extra', { params: estadoAprobacion ? { estadoAprobacion } : {} })
+      .then((r) => r.data),
   porEmpleado: (id) => cliente.get(`/horas-extra/empleado/${id}`).then((r) => r.data),
   porPeriodo: (id, periodo) =>
     cliente.get(`/horas-extra/empleado/${id}/periodo/${periodo}`).then((r) => r.data),
   crear: (registro) => cliente.post('/horas-extra', registro).then((r) => r.data),
+  aprobar: (id, observacion) =>
+    cliente.put(`/horas-extra/${id}/aprobar`, { observacion }).then((r) => r.data),
+  rechazar: (id, observacion) =>
+    cliente.put(`/horas-extra/${id}/rechazar`, { observacion }).then((r) => r.data),
 }
 
 export const apiNomina = {
@@ -39,6 +48,10 @@ export const apiAsistencia = {
     cliente.put(`/asistencia/${id}`, datos).then((r) => r.data),
   porEmpleado: (id) => cliente.get(`/asistencia/empleado/${id}`).then((r) => r.data),
   qrEmpleado: (id) => cliente.get(`/asistencia/empleado/${id}/qr`).then((r) => r.data),
+  horasTrabajadas: (id, { desde, hasta } = {}) =>
+    cliente
+      .get(`/asistencia/empleado/${id}/horas-trabajadas`, { params: { desde, hasta } })
+      .then((r) => r.data),
 }
 
 export const apiHorarios = {

@@ -18,6 +18,7 @@ function aFechaHoraApi(valor) {
 function Asistencia() {
   const { usuario } = useAuth()
   const esEmpleado = usuario?.rol === 'Empleado'
+  const esGestion = usuario?.rol === 'Administrador' || usuario?.rol === 'Contadora'
   const { empleados } = useEmpleados({ activo: !esEmpleado })
   const [registros, setRegistros] = useState([])
   const [cargando, setCargando] = useState(true)
@@ -28,6 +29,13 @@ function Asistencia() {
   const [qr, setQr] = useState(null)
   const [corrigiendo, setCorrigiendo] = useState(null)
   const [formCorreccion, setFormCorreccion] = useState({ tipo: 'Entrada', fechaHora: '', observacion: '', estado: 'Activo' })
+  const hoy = new Date()
+  const hace7 = new Date(hoy.getTime() - 6 * 24 * 60 * 60 * 1000)
+  const [filtroDesde, setFiltroDesde] = useState(hace7.toISOString().substring(0, 10))
+  const [filtroHasta, setFiltroHasta] = useState(hoy.toISOString().substring(0, 10))
+  const [empleadoCalc, setEmpleadoCalc] = useState('')
+  const [reporteHoras, setReporteHoras] = useState(null)
+  const [calculando, setCalculando] = useState(false)
 
   async function cargar() {
     setCargando(true)
@@ -107,6 +115,23 @@ function Asistencia() {
     }
   }
 
+  async function calcularHoras() {
+    if (!empleadoCalc) {
+      setMensaje({ tipo: 'error', texto: 'Selecciona un empleado para calcular horas trabajadas.' })
+      return
+    }
+    setCalculando(true)
+    setMensaje(null)
+    try {
+      const datos = await apiAsistencia.horasTrabajadas(empleadoCalc, { desde: filtroDesde, hasta: filtroHasta })
+      setReporteHoras(datos)
+    } catch (err) {
+      setMensaje({ tipo: 'error', texto: err.message })
+    } finally {
+      setCalculando(false)
+    }
+  }
+
   const mapa = nombres()
 
   return (
@@ -151,6 +176,74 @@ function Asistencia() {
           <div className="qr-caja">
             <img src={qr.imagen} alt="Código QR del empleado" />
             <code>{qr.codigoQr}</code>
+          </div>
+        )}
+      </Tarjeta>
+
+      <Tarjeta titulo="Cálculo automático de horas trabajadas">
+        <div className="filtros">
+          <label className="campo">
+            Empleado
+            <select value={empleadoCalc} onChange={(e) => setEmpleadoCalc(e.target.value)}>
+              <option value="">Seleccionar...</option>
+              {empleados.map((empleado) => (
+                <option key={empleado.usuario.id} value={empleado.usuario.id}>
+                  {empleado.usuario.id} - {nombreCompleto(empleado)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="campo">
+            Desde
+            <input type="date" value={filtroDesde} onChange={(e) => setFiltroDesde(e.target.value)} />
+          </label>
+          <label className="campo">
+            Hasta
+            <input type="date" value={filtroHasta} onChange={(e) => setFiltroHasta(e.target.value)} />
+          </label>
+          <div className="formulario-acciones" style={{ alignItems: 'end' }}>
+            <button type="button" onClick={calcularHoras} disabled={calculando}>
+              {calculando ? 'Calculando...' : 'Calcular'}
+            </button>
+          </div>
+        </div>
+        {reporteHoras && (
+          <div style={{ marginTop: '1rem' }}>
+            <div className="resumen-linea"><span>Horas trabajadas</span><span>{reporteHoras.totales.horasTrabajadas} h</span></div>
+            <div className="resumen-linea"><span>Horas programadas</span><span>{reporteHoras.totales.horasProgramadas} h</span></div>
+            <div className="resumen-linea"><span>Tardanzas</span><span>{reporteHoras.totales.horasTarde} h ({reporteHoras.totales.minutosTarde} min)</span></div>
+            <div className="resumen-linea"><span>Días completos</span><span>{reporteHoras.totales.diasCompletos}</span></div>
+            <div className="resumen-linea"><span>Días ausentes</span><span>{reporteHoras.totales.diasAusentes}</span></div>
+            <div className="tabla-envoltura" style={{ marginTop: '1rem' }}>
+              <table className="tabla">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Turno</th>
+                    <th>Prog. Entrada/Salida</th>
+                    <th>Entrada</th>
+                    <th>Salida</th>
+                    <th>Horas trab.</th>
+                    <th>Horas prog.</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reporteHoras.detalle.map((d) => (
+                    <tr key={d.fecha}>
+                      <td>{d.fecha}</td>
+                      <td>{d.turno || '-'}</td>
+                      <td>{d.horaEntradaProgramada || '-'} / {d.horaSalidaProgramada || '-'}</td>
+                      <td>{d.entrada || '-'}</td>
+                      <td>{d.salida || '-'}</td>
+                      <td>{d.horasTrabajadas}</td>
+                      <td>{d.horasProgramadas}</td>
+                      <td>{d.estado}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </Tarjeta>

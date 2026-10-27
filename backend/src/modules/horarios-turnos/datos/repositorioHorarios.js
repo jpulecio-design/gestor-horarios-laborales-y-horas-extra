@@ -147,6 +147,26 @@ function obtenerAsignacionesPorEmpleado(empleadoId) {
         });
 }
 
+// Obtiene la asignación vigente para un empleado en una fecha dada (YYYY-MM-DD)
+function obtenerAsignacionVigentePorFecha(empleadoId, fecha) {
+    let sql =
+        "SELECT " + COLUMNAS_ASIGNACION + " " +
+        "FROM ASIGNACION_HORARIO a JOIN TURNO t ON t.id_turno = a.id_turno " +
+        "WHERE a.id_empleado = :empleadoId AND a.estado = 'Activo' AND t.estado = 'Activo' " +
+        "AND a.fecha_desde <= TO_DATE(:fecha, 'YYYY-MM-DD') " +
+        "AND (a.fecha_hasta IS NULL OR a.fecha_hasta >= TO_DATE(:fecha, 'YYYY-MM-DD')) " +
+        "ORDER BY a.fecha_desde DESC " +
+        "FETCH FIRST 1 ROWS ONLY";
+
+    return database.ejecutar(sql, { empleadoId: empleadoId, fecha: fecha })
+        .then(function (resultado) {
+            if (resultado.rows.length === 0) {
+                return null;
+            }
+            return asignacionDesdeFila(resultado.rows[0]);
+        });
+}
+
 module.exports = {
     agregarTurno: agregarTurno,
     obtenerTurnos: obtenerTurnos,
@@ -154,5 +174,6 @@ module.exports = {
     existeNombreTurno: existeNombreTurno,
     agregarAsignacion: agregarAsignacion,
     buscarAsignacionPorId: buscarAsignacionPorId,
-    obtenerAsignacionesPorEmpleado: obtenerAsignacionesPorEmpleado
+    obtenerAsignacionesPorEmpleado: obtenerAsignacionesPorEmpleado,
+    obtenerAsignacionVigentePorFecha: obtenerAsignacionVigentePorFecha
 };

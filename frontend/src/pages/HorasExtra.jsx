@@ -18,14 +18,17 @@ const FORM_VACIO = {
 function HorasExtra() {
   const { usuario } = useAuth()
   const esEmpleado = usuario?.rol === 'Empleado'
+  const esGestion = usuario?.rol === 'Administrador' || usuario?.rol === 'Contadora'
   const { empleados } = useEmpleados({ activo: !esEmpleado })
   const [registros, setRegistros] = useState([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
   const [form, setForm] = useState(FORM_VACIO)
   const [filtroEmpleado, setFiltroEmpleado] = useState('')
+  const [filtroEstadoAprobacion, setFiltroEstadoAprobacion] = useState('')
   const [mensaje, setMensaje] = useState(null)
   const [guardando, setGuardando] = useState(false)
+  const [accionando, setAccionando] = useState(null)
 
   async function cargar() {
     setCargando(true)
@@ -33,7 +36,7 @@ function HorasExtra() {
     try {
       const datos = esEmpleado
         ? await apiHorasExtra.porEmpleado(usuario.id)
-        : await apiHorasExtra.listar()
+        : await apiHorasExtra.listar(filtroEstadoAprobacion || undefined)
       setRegistros(datos)
     } catch (err) {
       setError(err.message)
@@ -44,7 +47,8 @@ function HorasExtra() {
 
   useEffect(() => {
     cargar()
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtroEstadoAprobacion])
 
   function mapaEmpleados() {
     const mapa = {}
@@ -74,13 +78,44 @@ function HorasExtra() {
     setMensaje(null)
     try {
       await apiHorasExtra.crear(form)
-      setMensaje({ tipo: 'exito', texto: 'Hora extra registrada correctamente.' })
+      setMensaje({ tipo: 'exito', texto: 'Hora extra registrada correctamente. Pendiente de aprobación.' })
       setForm({ ...FORM_VACIO, empleadoId: form.empleadoId, valorHoraBase: form.valorHoraBase })
       await cargar()
     } catch (err) {
       setMensaje({ tipo: 'error', texto: err.message })
     } finally {
       setGuardando(false)
+    }
+  }
+
+  async function aprobar(id) {
+    if (!window.confirm('¿Aprobar esta hora extra?')) return
+    setAccionando(id)
+    setMensaje(null)
+    try {
+      await apiHorasExtra.aprobar(id)
+      setMensaje({ tipo: 'exito', texto: `Hora extra #${id} aprobada.` })
+      await cargar()
+    } catch (err) {
+      setMensaje({ tipo: 'error', texto: err.message })
+    } finally {
+      setAccionando(null)
+    }
+  }
+
+  async function rechazar(id) {
+    const observacion = window.prompt('Motivo del rechazo (opcional):')
+    if (observacion === null) return
+    setAccionando(id)
+    setMensaje(null)
+    try {
+      await apiHorasExtra.rechazar(id, observacion)
+      setMensaje({ tipo: 'exito', texto: `Hora extra #${id} rechazada.` })
+      await cargar()
+    } catch (err) {
+      setMensaje({ tipo: 'error', texto: err.message })
+    } finally {
+      setAccionando(null)
     }
   }
 
@@ -162,19 +197,30 @@ function HorasExtra() {
       <Tarjeta
         titulo="Registros"
         acciones={
-          !esEmpleado && (
-          <label className="campo">
-            Filtrar por empleado
-            <select value={filtroEmpleado} onChange={(e) => setFiltroEmpleado(e.target.value)}>
-              <option value="">Todos</option>
-              {empleados.map((empleado) => (
-                <option key={empleado.usuario.id} value={empleado.usuario.id}>
-                  {nombreCompleto(empleado)}
-                </option>
-              ))}
-            </select>
-          </label>
-          )
+          !esEmpleado ? (
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+              <label className="campo">
+                Filtrar por estado aprobación
+                <select value={filtroEstadoAprobacion} onChange={(e) => setFiltroEstadoAprobacion(e.target.value)}>
+                  <option value="">Todos</option>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="Aprobado">Aprobado</option>
+                  <option value="Rechazado">Rechazado</option>
+                </select>
+              </label>
+              <label className="campo">
+                Filtrar por empleado
+                <select value={filtroEmpleado} onChange={(e) => setFiltroEmpleado(e.target.value)}>
+                  <option value="">Todos</option>
+                  {empleados.map((empleado) => (
+                    <option key={empleado.usuario.id} value={empleado.usuario.id}>
+                      {nombreCompleto(empleado)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          ) : null
         }
       >
         {cargando && <Cargando />}
@@ -193,7 +239,8 @@ function HorasExtra() {
                   <th className="numerico">Valor hora</th>
                   <th className="numerico">Factor</th>
                   <th className="numerico">Valor</th>
-                  <th>Estado</th>
+                  <th>Aprobación</th>
+                  {esGestion && <th>Acciones</th>}
                 </tr>
               </thead>
               <tbody>
@@ -207,7 +254,25 @@ function HorasExtra() {
                     <td className="numerico">{formatearMoneda(registro.valorHoraBase)}</td>
                     <td className="numerico">{registro.factorRecargo}</td>
                     <td className="numerico">{formatearMoneda(registro.valor)}</td>
-                    <td>{registro.estado}</td>
+                    <td>{registro.estadoAprobacion || registro.estado || 'Pendiente'}</td>
+                    {esGestion && (
+                      <td>
+                        {registro.estadoAprobacion === 'Pendiente' ? (
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button type="button" className="boton-mini" disabled={accionando === registro.id} onClick={() => aprobar(registro.id)}>
+                              Aprobar
+                            </button>
+                            <button type="button" className="boton-secundario boton-mini" disabled={accionando === registro.id} onClick={() => rechazar(registro.id)}>
+                              Rechazar
+                            </button>
+                          </div>
+                        ) : registro.observacionAprobacion ? (
+                          <span title={registro.observacionAprobacion}>Ver obs.</span>
+                        ) : (
+                          '-'
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

@@ -3,6 +3,9 @@ const database = require("../../../config/database");
 const COLUMNAS =
     "id_hora_extra, id_empleado, TO_CHAR(fecha, 'YYYY-MM-DD') AS fecha, tipo, " +
     "cantidad_horas, valor_hora_base, factor_recargo, valor, estado, " +
+    "estado_aprobacion, aprobado_por, " +
+    "TO_CHAR(fecha_aprobacion, 'YYYY-MM-DD HH24:MI') AS fecha_aprobacion, " +
+    "observacion_aprobacion, " +
     "TO_CHAR(fecha_creacion, 'YYYY-MM-DD HH24:MI') AS fecha_creacion";
 
 // Convierte una fila de Oracle (columnas en mayuscula) en el objeto hora extra.
@@ -17,6 +20,10 @@ function crearDesdeFila(fila) {
         factorRecargo: fila.FACTOR_RECARGO,
         valor: fila.VALOR,
         estado: fila.ESTADO,
+        estadoAprobacion: fila.ESTADO_APROBACION || 'Pendiente',
+        aprobadoPor: fila.APROBADO_POR || null,
+        fechaAprobacion: fila.FECHA_APROBACION || null,
+        observacionAprobacion: fila.OBSERVACION_APROBACION || null,
         fechaCreacion: fila.FECHA_CREACION
     };
 }
@@ -96,10 +103,46 @@ function obtenerPorEmpleadoPeriodo(empleadoId, periodo) {
         });
 }
 
+// Obtiene horas extra por estado de aprobación
+function obtenerPorEstadoAprobacion(estadoAprobacion) {
+    let sql = "SELECT " + COLUMNAS + " FROM HORA_EXTRA WHERE estado_aprobacion = :estadoAprobacion ORDER BY id_hora_extra";
+    return database.ejecutar(sql, { estadoAprobacion: estadoAprobacion })
+        .then(function (resultado) {
+            return resultado.rows.map(crearDesdeFila);
+        });
+}
+
+// Aprueba una hora extra
+function aprobarHoraExtra(idHoraExtra, aprobadoPor, observacion) {
+    let sql =
+        "UPDATE HORA_EXTRA SET estado_aprobacion = 'Aprobado', " +
+        "aprobado_por = :aprobadoPor, fecha_aprobacion = SYSTIMESTAMP, " +
+        "observacion_aprobacion = :observacion WHERE id_hora_extra = :id";
+    return database.ejecutar(sql, { id: idHoraExtra, aprobadoPor: aprobadoPor, observacion: observacion || null })
+        .then(function () {
+            return buscarPorId(idHoraExtra);
+        });
+}
+
+// Rechaza una hora extra
+function rechazarHoraExtra(idHoraExtra, aprobadoPor, observacion) {
+    let sql =
+        "UPDATE HORA_EXTRA SET estado_aprobacion = 'Rechazado', " +
+        "aprobado_por = :aprobadoPor, fecha_aprobacion = SYSTIMESTAMP, " +
+        "observacion_aprobacion = :observacion WHERE id_hora_extra = :id";
+    return database.ejecutar(sql, { id: idHoraExtra, aprobadoPor: aprobadoPor, observacion: observacion || null })
+        .then(function () {
+            return buscarPorId(idHoraExtra);
+        });
+}
+
 module.exports = {
     agregarHoraExtra: agregarHoraExtra,
     obtenerTodas: obtenerTodas,
     buscarPorId: buscarPorId,
     obtenerPorEmpleado: obtenerPorEmpleado,
-    obtenerPorEmpleadoPeriodo: obtenerPorEmpleadoPeriodo
+    obtenerPorEmpleadoPeriodo: obtenerPorEmpleadoPeriodo,
+    obtenerPorEstadoAprobacion: obtenerPorEstadoAprobacion,
+    aprobarHoraExtra: aprobarHoraExtra,
+    rechazarHoraExtra: rechazarHoraExtra
 };

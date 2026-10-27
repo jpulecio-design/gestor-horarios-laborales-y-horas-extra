@@ -9,9 +9,12 @@ const router = express.Router();
 
 const GESTION = ["Administrador", "Contadora"];
 
-// GET /api/horas-extra -> todas las horas extra
+// GET /api/horas-extra -> todas las horas extra (puede filtrar por estadoAprobacion)
 router.get("/", autorizar(...GESTION), async (req, res) => {
     try {
+        if (req.query.estadoAprobacion) {
+            return res.json(await repositorio.obtenerPorEstadoAprobacion(req.query.estadoAprobacion));
+        }
         res.json(await repositorio.obtenerTodas());
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -40,11 +43,39 @@ router.get("/empleado/:id/periodo/:periodo", autorizarPropio(...GESTION), async 
 });
 
 // POST /api/horas-extra -> registra una hora extra
-router.post("/", autorizar("Administrador"), async (req, res) => {
+router.post("/", autorizar(...GESTION), async (req, res) => {
     try {
         const resultado = await controlador.registrarHoraExtra(req.body);
         if (resultado.exito) {
             res.status(201).json(resultado.datos);
+        } else {
+            res.status(400).json({ error: resultado.mensaje });
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// PUT /api/horas-extra/:id/aprobar -> aprobar hora extra (solo gestion)
+router.put("/:id/aprobar", autorizar(...GESTION), async (req, res) => {
+    try {
+        const resultado = await controlador.aprobarHoraExtra(req.params.id, req.usuario.id, req.body.observacion);
+        if (resultado.exito) {
+            res.json(resultado.datos);
+        } else {
+            res.status(400).json({ error: resultado.mensaje });
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// PUT /api/horas-extra/:id/rechazar -> rechazar hora extra (solo gestion)
+router.put("/:id/rechazar", autorizar(...GESTION), async (req, res) => {
+    try {
+        const resultado = await controlador.rechazarHoraExtra(req.params.id, req.usuario.id, req.body.observacion);
+        if (resultado.exito) {
+            res.json(resultado.datos);
         } else {
             res.status(400).json({ error: resultado.mensaje });
         }
