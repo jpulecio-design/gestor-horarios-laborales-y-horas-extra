@@ -59,8 +59,6 @@ function ejecutar(sql, parametros) {
         return Promise.reject(new Error(
             "Faltan DB_USER, DB_PASSWORD o DB_CONNECT_STRING en el archivo .env"
         ));
-    if (!configuracion.user || !configuracion.password || !configuracion.connectString) {
-        return Promise.reject(new Error("Faltan DB_USER, DB_PASSWORD o DB_CONNECT_STRING en el archivo .env"));
     }
 
     let conexion = null;
@@ -113,7 +111,6 @@ function transaccion(trabajo) {
                     );
                 });
         })
-        .finally(function () {
         .finally(function () {
             if (conexion !== null) {
                 return conexion.close();
