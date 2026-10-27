@@ -91,7 +91,68 @@ function construirSemana(asignaciones, fechaReferenciaTexto) {
     return dias;
 }
 
+// true si la fecha "AAAA-MM-DD" existe de verdad (rechaza 2026-02-30, 2026-13-01...)
+function fechaExiste(texto) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(texto || ""))) {
+        return false;
+    }
+    return aTexto(aFecha(texto)) === texto;
+}
+
+// Fecha hasta vacia = indefinida. Se compara como un valor muy lejano.
+const FIN_INDEFINIDO = "9999-12-31";
+
+function finDeRango(fechaHasta) {
+    return fechaHasta === null || fechaHasta === undefined || fechaHasta === "" ? FIN_INDEFINIDO : fechaHasta;
+}
+
+// true si dos asignaciones ponen al empleado en dos turnos el mismo dia:
+// sus fechas se cruzan y, dentro del cruce, cae un dia de la semana que ambos turnos cubren.
+// Cada asignacion es { fechaDesde, fechaHasta, dias } con dias = "1,2,3,4,5".
+// Ej: Diurno (1-5) y Fin de semana (6,7) en las mismas fechas NO se solapan.
+function asignacionesSeSolapan(a, b) {
+    let inicio = a.fechaDesde > b.fechaDesde ? a.fechaDesde : b.fechaDesde;
+    let finA = finDeRango(a.fechaHasta);
+    let finB = finDeRango(b.fechaHasta);
+    let fin = finA < finB ? finA : finB;
+    if (inicio > fin) {
+        return false; // las fechas no se cruzan
+    }
+
+    let diasB = listaDias(b.dias);
+    let comunes = listaDias(a.dias).filter(function (d) { return diasB.indexOf(d) !== -1; });
+    if (comunes.length === 0) {
+        return false; // los turnos no comparten dias de la semana
+    }
+
+    // basta con revisar los primeros 7 dias del cruce: ahi aparece cada dia de la semana
+    let fecha = aFecha(inicio);
+    for (let i = 0; i < 7 && aTexto(fecha) <= fin; i++) {
+        if (comunes.indexOf(diaIso(fecha)) !== -1) {
+            return true;
+        }
+        fecha = sumarDias(fecha, 1);
+    }
+    return false;
+}
+
+// Devuelve la primera asignacion existente (con su turno) que se solapa con la nueva, o null.
+// nueva = { fechaDesde, fechaHasta, dias }
+function buscarConflicto(asignaciones, nueva) {
+    for (let i = 0; i < asignaciones.length; i++) {
+        let a = asignaciones[i];
+        let existente = { fechaDesde: a.fechaDesde, fechaHasta: a.fechaHasta, dias: a.turno.dias };
+        if (asignacionesSeSolapan(existente, nueva)) {
+            return a;
+        }
+    }
+    return null;
+}
+
 module.exports = {
+    fechaExiste: fechaExiste,
+    asignacionesSeSolapan: asignacionesSeSolapan,
+    buscarConflicto: buscarConflicto,
     NOMBRES_DIA: NOMBRES_DIA,
     listaDias: listaDias,
     aFecha: aFecha,

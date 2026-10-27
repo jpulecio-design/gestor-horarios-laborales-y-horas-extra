@@ -1,13 +1,33 @@
 const express = require("express");
+const multer = require("multer");
 
 const controlador = require("../app/controladorHorarios");
+const controladorProgramacion = require("../app/controladorProgramacion");
 const repositorio = require("../datos/repositorioHorarios");
 
 const { autorizar, autorizarPropio } = require("../../../../middlewares/autorizar");
 
 const router = express.Router();
 
-const GESTION = ["Administrador", "Contadora"];
+// El archivo se guarda en memoria (no en disco) y solo se acepta un .xlsx de hasta 5 MB
+const subida = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 }
+});
+
+// Recibe el campo "archivo" y convierte los errores de multer (ej. archivo muy grande)
+// en un 400 con JSON, en lugar de la pagina HTML de error por defecto de Express.
+function recibirArchivo(req, res, next) {
+    subida.single("archivo")(req, res, function (error) {
+        if (!error) {
+            return next();
+        }
+        const mensaje = error.code === "LIMIT_FILE_SIZE"
+            ? "El archivo supera el límite de 5 MB."
+            : "No se pudo recibir el archivo: " + error.message;
+        res.status(400).json({ error: mensaje });
+    });
+}
 
 // GET /api/horarios/turnos -> lista de turnos disponibles
 router.get("/turnos", async (req, res) => {
@@ -72,6 +92,86 @@ router.get("/empleado/:id/semana", autorizarPropio(...GESTION), async (req, res)
         res.json(await controlador.semanaDeEmpleado(Number(req.params.id), req.query.fecha));
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+});
+
+// ==================== CU04: programacion diaria (HORARIO_ASIGNADO) ====================
+
+// GET /api/horarios/tipos-turno -> catalogo de tipos permitidos
+router.get("/tipos-turno", (req, res) => {
+    res.json(controladorProgramacion.tiposTurno());
+});
+
+// GET /api/horarios/programacion/:empleadoId?desde=AAAA-MM-DD&hasta=AAAA-MM-DD
+// Dias programados del empleado en el periodo (semana, mes...).
+router.get("/programacion/:empleadoId", async (req, res) => {
+    try {
+        const resultado = await controladorProgramacion.consultarProgramacion(
+            req.params.empleadoId, req.query.desde, req.query.hasta);
+        if (resultado.exito) {
+            res.json(resultado.datos);
+        } else {
+            res.status(400).json({ error: resultado.mensaje });
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// PUT /api/horarios/programacion/:empleadoId -> crea o actualiza dias de la programacion
+// body: { "dias": [ { "fecha": "2026-11-02", "horaEntrada": "22:00", "horaSalida": "06:00", "tipoTurno": "Nocturno" } ] }
+// Todo o nada: si un dia tiene error o se solapa, no se guarda ninguno.
+router.put("/programacion/:empleadoId", async (req, res) => {
+    try {
+        const resultado = await controladorProgramacion.programarDias(
+            req.params.empleadoId, req.body ? req.body.dias : undefined);
+        if (resultado.exito) {
+            res.json({ mensaje: resultado.mensaje, ...resultado.datos });
+        } else {
+            res.status(400).json({ error: resultado.mensaje, errores: resultado.errores });
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// DELETE /api/horarios/programacion/:empleadoId/:fecha -> quita el turno de ese dia
+router.delete("/programacion/:empleadoId/:fecha", async (req, res) => {
+    try {
+        const resultado = await controladorProgramacion.eliminarDia(req.params.empleadoId, req.params.fecha);
+        if (resultado.exito) {
+            res.json({ mensaje: resultado.mensaje });
+        } else {
+            res.status(resultado.noEncontrado ? 404 : 400).json({ error: resultado.mensaje });
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// POST /api/horarios/importar -> importa la plantilla de programacion desde Excel (campo "archivo")
+// Columnas (fila 1): empleadoId, fecha, horaEntrada, horaSalida, tipoTurno
+// 201 -> resumen de lo guardado; 400 -> errores con fila y columna (no guarda nada)
+router.post("/importar", recibirArchivo, async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: "Falta el archivo (campo \"archivo\")." });
+    }
+
+    if (!req.file.originalname.toLowerCase().endsWith(".xlsx")) {
+        return res.status(400).json({ error: "El archivo debe ser un .xlsx." });
+    }
+
+    try {
+        const resultado = await controladorProgramacion.importarProgramacion(req.file.buffer);
+        if (resultado.exito) {
+            res.status(201).json({ mensaje: resultado.mensaje, ...resultado.datos });
+        } else {
+            res.status(400).json({ error: resultado.mensaje, errores: resultado.errores });
+        }
+    } catch (error) {
+        // archivo que no es un Excel legible (400) o error de base de datos (500)
+        const estado = error.esArchivoInvalido ? 400 : 500;
+        res.status(estado).json({ error: error.message });
     }
 });
 
