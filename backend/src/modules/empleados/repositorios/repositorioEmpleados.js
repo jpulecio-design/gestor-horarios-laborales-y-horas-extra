@@ -263,5 +263,6 @@ module.exports = {
     existeCedulaOCorreo: existeCedulaOCorreo,
     insertarEmpleado: insertarEmpleado,
     actualizarEmpleado: actualizarEmpleado,
+    cambiarEstado: cambiarEstado,
     asegurarCodigoQr: asegurarCodigoQr
 };
