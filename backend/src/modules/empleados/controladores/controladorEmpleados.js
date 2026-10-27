@@ -135,6 +135,11 @@ function guardarEdicion(id, datosNuevos) {
 
             empleadoViejo = empleado;
 
+            // contrasena vacia al editar = conservar la que ya tiene
+            if (datosNuevos.contrasena === "") {
+                datosNuevos.contrasena = empleado.usuario.contrasena;
+            }
+
             let error = validarDatos(datosNuevos);
 
             if (error !== "") {

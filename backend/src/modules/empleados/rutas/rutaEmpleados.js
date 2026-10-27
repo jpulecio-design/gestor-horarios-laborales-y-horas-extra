@@ -11,6 +11,16 @@ const router = express.Router();
 const ADMINISTRADOR = "Administrador";
 const LECTURA_EMPLEADOS = ["Administrador", "Contadora"];
 
+// Copia del empleado sin la contrasena: el hash nunca sale por la API.
+function sinContrasena(empleado) {
+    if (empleado === null) {
+        return null;
+    }
+    let usuario = Object.assign({}, empleado.usuario);
+    delete usuario.contrasena;
+    return Object.assign({}, empleado, { usuario: usuario });
+}
+
 // GET /api/empleados
 // Devuelve todos los empleados
 
@@ -18,7 +28,7 @@ router.get("/", autorizar(...LECTURA_EMPLEADOS), (req, res) => {
 
     repositorio.obtenerTodos()
         .then(function (empleados) {
-            res.json(empleados);
+            res.json(empleados.map(sinContrasena));
         })
         .catch(function (error) {
             res.status(500).json({
@@ -44,7 +54,7 @@ router.get("/:id", autorizar(...LECTURA_EMPLEADOS), (req, res) => {
 
             } else {
 
-                res.json(empleado);
+                res.json(sinContrasena(empleado));
 
             }
 
@@ -80,7 +90,7 @@ router.post("/", autorizar(ADMINISTRADOR), (req, res) => {
             return repositorio.buscarEmpleadoPorId(resultado)
                 .then(function (nuevo) {
 
-                    res.status(201).json(nuevo);
+                    res.status(201).json(sinContrasena(nuevo));
 
                 });
 
@@ -120,7 +130,7 @@ router.put("/:id", autorizar(ADMINISTRADOR), (req, res) => {
             )
                 .then(function (empleado) {
 
-                    res.json(empleado);
+                    res.json(sinContrasena(empleado));
 
                 });
 
