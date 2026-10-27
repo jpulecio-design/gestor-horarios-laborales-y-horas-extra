@@ -3,7 +3,8 @@
 --
 -- Crea TODAS las tablas que necesitan los modulos del backend:
 --   EMPLEADO, CONTACTO_EMERGENCIA, HORA_EXTRA, NOMINA,
---   ASISTENCIA, TURNO, ASIGNACION_HORARIO.
+--   ASISTENCIA, TURNO, ASIGNACION_HORARIO, HORARIO_ASIGNADO,
+--   BACKUP_HISTORIAL.
 --
 -- Ejecutar UNA sola vez sobre un esquema Oracle vacio (por ejemplo
 -- el usuario de la aplicacion o el PDB FREEPDB1).
@@ -205,4 +206,27 @@ CREATE TABLE HORARIO_ASIGNADO (
         REFERENCES EMPLEADO (id_empleado),
     CONSTRAINT ck_horario_tipo CHECK (tipo_turno IN ('Diurno', 'Vespertino', 'Nocturno')),
     CONSTRAINT uq_horario_empleado_fecha UNIQUE (id_empleado, fecha)
+);
+
+
+-- ------------------------------------------------------------
+-- HISTORIAL DE BACKUPS (CU11: seguridad y respaldos)
+-- Un registro por cada respaldo generado (manual o automatico).
+-- id_empleado = quien lo genero (NULL en los automaticos).
+-- ------------------------------------------------------------
+CREATE TABLE BACKUP_HISTORIAL (
+    id_backup        NUMBER GENERATED ALWAYS AS IDENTITY,
+    fecha_hora       DATE DEFAULT SYSDATE NOT NULL,
+    nombre_archivo   VARCHAR2(150),
+    tipo             VARCHAR2(15) NOT NULL,
+    estado           VARCHAR2(15) NOT NULL,
+    id_empleado      NUMBER,
+    intentos         NUMBER DEFAULT 1 NOT NULL,
+    tamano_bytes     NUMBER,
+    detalle_error    VARCHAR2(255),
+    CONSTRAINT pk_backup_historial PRIMARY KEY (id_backup),
+    CONSTRAINT ck_backup_tipo   CHECK (tipo IN ('Manual', 'Automatico')),
+    CONSTRAINT ck_backup_estado CHECK (estado IN ('Exitoso', 'Fallido')),
+    CONSTRAINT fk_backup_empleado FOREIGN KEY (id_empleado)
+        REFERENCES EMPLEADO (id_empleado)
 );

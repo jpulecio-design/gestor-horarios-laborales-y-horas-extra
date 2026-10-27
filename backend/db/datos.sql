@@ -91,4 +91,18 @@ INSERT INTO HORA_EXTRA (id_empleado, fecha, tipo, cantidad_horas, valor_hora_bas
 SELECT id_empleado, TO_DATE('2026-08-11','YYYY-MM-DD'), 'Nocturna', 1.5, 6250, 1.75, 16406.25
 FROM EMPLEADO WHERE correo = 'carlos@empresa.com';
 
+-- Programacion diaria (CU04): semana del 26 de octubre de 2026.
+-- Tiene prioridad sobre la plantilla TURNO + ASIGNACION_HORARIO.
+INSERT INTO HORARIO_ASIGNADO (id_empleado, fecha, hora_entrada_prog, hora_salida_prog, tipo_turno)
+SELECT id_empleado, TO_DATE('2026-10-26','YYYY-MM-DD'), '08:00', '17:00', 'Diurno'
+FROM EMPLEADO WHERE correo = 'carlos@empresa.com';
+
+INSERT INTO HORARIO_ASIGNADO (id_empleado, fecha, hora_entrada_prog, hora_salida_prog, tipo_turno)
+SELECT id_empleado, TO_DATE('2026-10-27','YYYY-MM-DD'), '14:00', '22:00', 'Vespertino'
+FROM EMPLEADO WHERE correo = 'carlos@empresa.com';
+
+INSERT INTO HORARIO_ASIGNADO (id_empleado, fecha, hora_entrada_prog, hora_salida_prog, tipo_turno)
+SELECT id_empleado, TO_DATE('2026-10-28','YYYY-MM-DD'), '22:00', '06:00', 'Nocturno'
+FROM EMPLEADO WHERE correo = 'maria@empresa.com';
+
 COMMIT;
