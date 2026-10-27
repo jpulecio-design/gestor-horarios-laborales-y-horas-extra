@@ -30,5 +30,6 @@ app.use("/api/asistencia", rutaAsistencia);
 app.use("/api/horarios", rutaHorarios);
 app.use("/api/monitoreo", rutaMonitoreo);
 app.use("/api/reportes", rutaReportes);
+app.use("/api/backups", rutaBackups);
 
 module.exports = app;
