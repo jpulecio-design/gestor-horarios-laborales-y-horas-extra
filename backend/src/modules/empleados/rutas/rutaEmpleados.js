@@ -146,4 +146,73 @@ router.put("/:id", autorizar(ADMINISTRADOR), (req, res) => {
 
 });
 
+// Activa o inactiva un empleado 
+
+router.patch("/:id/estado", autorizar(ADMINISTRADOR), (req, res) => {
+
+    let id = Number(req.params.id);
+    let nuevoEstado = req.body.estado;
+
+    if (nuevoEstado !== "Activo" && nuevoEstado !== "Inactivo") {
+
+        res.status(400).json({
+            error: "El estado debe ser 'Activo' o 'Inactivo'."
+        });
+
+        return;
+    }
+
+    repositorio.buscarEmpleadoPorId(id)
+        .then(function (empleado) {
+
+            if (empleado === null) {
+
+                res.status(404).json({
+                    error: "No existe un empleado con ese id."
+                });
+
+                return;
+            }
+
+            if (empleado.usuario.estado === nuevoEstado) {
+
+                res.status(400).json({
+                    error: "El empleado ya estaba " + nuevoEstado + "."
+                });
+
+                return;
+            }
+
+            return controlador.cambiarEstado(id, nuevoEstado)
+                .then(function (cambiado) {
+
+                    if (!cambiado) {
+
+                        res.status(400).json({
+                            error: "No se pudo cambiar el estado del empleado."
+                        });
+
+                        return;
+                    }
+
+                    return repositorio.buscarEmpleadoPorId(id)
+                        .then(function (actualizado) {
+
+                            res.json(sinContrasena(actualizado));
+
+                        });
+
+                });
+
+        })
+        .catch(function (error) {
+
+            res.status(500).json({
+                error: error.message
+            });
+
+        });
+
+});
+
 module.exports = router;
