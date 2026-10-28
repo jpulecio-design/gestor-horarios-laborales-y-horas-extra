@@ -16,6 +16,8 @@ export const apiEmpleados = {
   crear: (empleado) => cliente.post('/empleados', empleado).then((r) => r.data),
   actualizar: (id, empleado) =>
     cliente.put(`/empleados/${id}`, empleado).then((r) => r.data),
+  cambiarEstado: (id, estado) =>
+    cliente.patch(`/empleados/${id}/estado`, { estado }).then((r) => r.data),
 }
 
 export const apiHorasExtra = {
