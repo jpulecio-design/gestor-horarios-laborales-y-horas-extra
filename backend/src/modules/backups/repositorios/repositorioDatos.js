@@ -1,18 +1,16 @@
 const database = require("../../../config/database");
 
+// Tablas de db/esquema.sql que entran en el respaldo (BACKUP_HISTORIAL no,
+// porque es el propio registro de los respaldos).
 const TABLAS_RESPALDO = [
     { nombre: "EMPLEADO", pk: "ID_EMPLEADO" },
     { nombre: "CONTACTO_EMERGENCIA", pk: "ID_CONTACTO" },
-    { nombre: "TARIFA_RECARGO", pk: "ID_TARIFA" },
-    { nombre: "PLANTILLA_TURNO", pk: "ID_PLANTILLA" },
+    { nombre: "TURNO", pk: "ID_TURNO" },
+    { nombre: "ASIGNACION_HORARIO", pk: "ID_ASIGNACION" },
     { nombre: "HORARIO_ASIGNADO", pk: "ID_HORARIO" },
-    { nombre: "MARCACION", pk: "ID_MARCACION" },
+    { nombre: "ASISTENCIA", pk: "ID_ASISTENCIA" },
     { nombre: "HORA_EXTRA", pk: "ID_HORA_EXTRA" },
-    { nombre: "PRESUPUESTO_HORAS_EXTRA", pk: "ID_PRESUPUESTO" },
-    { nombre: "NOMINA", pk: "ID_NOMINA" },
-    { nombre: "NOVEDAD", pk: "ID_NOVEDAD" },
-    { nombre: "SOLICITUD_RELEVO", pk: "ID_SOLICITUD" },
-    { nombre: "AUDITORIA", pk: "ID_AUDITORIA" }
+    { nombre: "NOMINA", pk: "ID_NOMINA" }
 ];
 
 function buscarTabla(nombre) {

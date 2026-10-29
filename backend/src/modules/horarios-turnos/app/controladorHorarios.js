@@ -1,9 +1,9 @@
 const horario = require("../dominio/horario");
+const programacion = require("../dominio/programacion");
 const repositorio = require("../datos/repositorioHorarios");
+const repositorioProgramacion = require("../datos/repositorioProgramacion");
 const repositorioEmpleados = require("../../empleados/repositorios/repositorioEmpleados");
 
-const FORMATO_HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
-const FORMATO_FECHA = /^\d{4}-\d{2}-\d{2}$/;
 
 // Acepta "1,2,3,4,5" o [1,2,3,4] y devuelve "1,2,3,4,5" ordenado y sin repetir.
 // Devuelve null si no queda ningun dia valido.
@@ -44,10 +44,10 @@ async function registrarTurno(datos) {
     }
     let nombre = String(datos.nombre).trim();
 
-    if (!FORMATO_HORA.test(datos.horaEntrada || "")) {
+    if (!programacion.horaValida(datos.horaEntrada)) {
         return { exito: false, mensaje: "ERROR: la hora de entrada debe ser HH:MM (ej: 08:00)." };
     }
-    if (!FORMATO_HORA.test(datos.horaSalida || "")) {
+    if (!programacion.horaValida(datos.horaSalida)) {
         return { exito: false, mensaje: "ERROR: la hora de salida debe ser HH:MM (ej: 17:00)." };
     }
 
@@ -90,24 +90,37 @@ async function asignarHorario(datos) {
         return { exito: false, mensaje: "ERROR: no existe un empleado con ese id." };
     }
 
-    if (await repositorio.buscarTurnoPorId(turnoId) === null) {
+    let turno = await repositorio.buscarTurnoPorId(turnoId);
+    if (turno === null) {
         return { exito: false, mensaje: "ERROR: no existe un turno con ese id." };
     }
 
-    if (!FORMATO_FECHA.test(datos.fechaDesde || "")) {
-        return { exito: false, mensaje: "ERROR: la fecha desde es obligatoria (AAAA-MM-DD)." };
+    if (!horario.fechaExiste(datos.fechaDesde)) {
+        return { exito: false, mensaje: "ERROR: la fecha desde es obligatoria y debe ser real (AAAA-MM-DD)." };
     }
 
     let fechaHasta = null;
     if (datos.fechaHasta !== undefined && datos.fechaHasta !== null &&
         String(datos.fechaHasta).trim() !== "") {
-        if (!FORMATO_FECHA.test(datos.fechaHasta)) {
-            return { exito: false, mensaje: "ERROR: la fecha hasta debe ser AAAA-MM-DD." };
+        if (!horario.fechaExiste(datos.fechaHasta)) {
+            return { exito: false, mensaje: "ERROR: la fecha hasta debe ser una fecha real (AAAA-MM-DD)." };
         }
         if (datos.fechaHasta < datos.fechaDesde) {
             return { exito: false, mensaje: "ERROR: la fecha hasta no puede ser anterior a la fecha desde." };
         }
         fechaHasta = datos.fechaHasta;
+    }
+
+    let existentes = await repositorio.obtenerAsignacionesPorEmpleado(empleadoId);
+    let conflicto = horario.buscarConflicto(existentes,
+        { fechaDesde: datos.fechaDesde, fechaHasta: fechaHasta, dias: turno.dias });
+    if (conflicto !== null) {
+        return {
+            exito: false,
+            mensaje: "ERROR: el empleado ya tiene el turno \"" + conflicto.turno.nombre + "\" entre " +
+                conflicto.fechaDesde + " y " + (conflicto.fechaHasta || "indefinido") +
+                ", que coincide en días con este rango."
+        };
     }
 
     let guardada = await repositorio.agregarAsignacion({
@@ -131,15 +144,36 @@ function horarioDeEmpleado(empleadoId) {
     return repositorio.obtenerAsignacionesPorEmpleado(empleadoId);
 }
 
+// Calendario operativo: el turno programado para un dia exacto (CU04, tabla
+// HORARIO_ASIGNADO) tiene prioridad sobre el turno de la plantilla (TURNO +
+// ASIGNACION_HORARIO). "origen" indica de donde sale cada turno.
+function turnoProgramado(dia) {
+    return {
+        id: null,
+        nombre: dia.tipoTurno,
+        tipoTurno: dia.tipoTurno,
+        horaEntrada: dia.horaEntrada,
+        horaSalida: dia.horaSalida,
+        origen: "Programación"
+    };
+}
+
+function turnoDePlantilla(turno) {
+    return turno === null ? null : Object.assign({}, turno, { origen: "Plantilla" });
+}
+
 // Turno vigente hoy (o en la fecha indicada).
 async function horarioDeHoy(empleadoId, fechaTexto) {
     let asignaciones = await repositorio.obtenerAsignacionesPorEmpleado(empleadoId);
     let hoy = fechaTexto || horario.aTexto(new Date());
+    let programados = await repositorioProgramacion.obtenerPorEmpleadoEntre(empleadoId, hoy, hoy);
 
     return {
         empleadoId: empleadoId,
         fecha: hoy,
-        turno: horario.turnoDeFecha(asignaciones, hoy)
+        turno: programados.length > 0
+            ? turnoProgramado(programados[0])
+            : turnoDePlantilla(horario.turnoDeFecha(asignaciones, hoy))
     };
 }
 
@@ -147,11 +181,22 @@ async function horarioDeHoy(empleadoId, fechaTexto) {
 async function semanaDeEmpleado(empleadoId, fechaTexto) {
     let asignaciones = await repositorio.obtenerAsignacionesPorEmpleado(empleadoId);
     let referencia = fechaTexto || horario.aTexto(new Date());
+    let inicio = horario.aTexto(horario.inicioSemana(horario.aFecha(referencia)));
+    let dias = horario.construirSemana(asignaciones, referencia);
+
+    let programados = await repositorioProgramacion.obtenerPorEmpleadoEntre(
+        empleadoId, inicio, dias[dias.length - 1].fecha);
+    let porFecha = {};
+    programados.forEach(function (d) { porFecha[d.fecha] = d; });
 
     return {
         empleadoId: empleadoId,
-        inicio: horario.aTexto(horario.inicioSemana(horario.aFecha(referencia))),
-        dias: horario.construirSemana(asignaciones, referencia)
+        inicio: inicio,
+        dias: dias.map(function (d) {
+            return Object.assign({}, d, {
+                turno: porFecha[d.fecha] ? turnoProgramado(porFecha[d.fecha]) : turnoDePlantilla(d.turno)
+            });
+        })
     };
 }
 

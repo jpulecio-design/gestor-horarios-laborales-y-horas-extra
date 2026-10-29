@@ -1,11 +1,13 @@
 -- ============================================================
--- Borra TODAS las tablas del proyecto (ordem inverso a las claves foraneas).
+-- Borra TODAS las tablas del proyecto (orden inverso a las claves foraneas).
 -- Pensado para desarrollo: reinicia la base para volver a correr el esquema.
 --   node scripts/db.js reiniciar
 --
 -- Si una tabla no existe, el error se ignora.
 -- ============================================================
 
+DROP TABLE BACKUP_HISTORIAL CASCADE CONSTRAINTS PURGE;
+DROP TABLE HORARIO_ASIGNADO CASCADE CONSTRAINTS PURGE;
 DROP TABLE CONTACTO_EMERGENCIA CASCADE CONSTRAINTS PURGE;
 DROP TABLE ASISTENCIA CASCADE CONSTRAINTS PURGE;
 DROP TABLE HORA_EXTRA CASCADE CONSTRAINTS PURGE;
@@ -13,3 +15,13 @@ DROP TABLE NOMINA CASCADE CONSTRAINTS PURGE;
 DROP TABLE ASIGNACION_HORARIO CASCADE CONSTRAINTS PURGE;
 DROP TABLE TURNO CASCADE CONSTRAINTS PURGE;
 DROP TABLE EMPLEADO CASCADE CONSTRAINTS PURGE;
+
+-- Tablas de un modelo anterior que ya no usa ningun modulo del backend.
+-- Se borran para que la base quede igual a db/esquema.sql.
+DROP TABLE AUDITORIA CASCADE CONSTRAINTS PURGE;
+DROP TABLE SOLICITUD_RELEVO CASCADE CONSTRAINTS PURGE;
+DROP TABLE NOVEDAD CASCADE CONSTRAINTS PURGE;
+DROP TABLE PRESUPUESTO_HORAS_EXTRA CASCADE CONSTRAINTS PURGE;
+DROP TABLE MARCACION CASCADE CONSTRAINTS PURGE;
+DROP TABLE PLANTILLA_TURNO CASCADE CONSTRAINTS PURGE;
+DROP TABLE TARIFA_RECARGO CASCADE CONSTRAINTS PURGE;

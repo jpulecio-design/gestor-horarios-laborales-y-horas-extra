@@ -144,8 +144,14 @@ function Empleados() {
               <input type="email" value={form.correo} onChange={(e) => cambiar('correo', e.target.value)} required />
             </label>
             <label className="campo">
-              {editandoId ? 'Contraseña (vacía = no cambiar)' : 'Contraseña *'}
-              <input value={form.contrasena} onChange={(e) => cambiar('contrasena', e.target.value)} required={!editandoId} />
+              {editandoId ? 'Contraseña (vacía = sin cambios)' : 'Contraseña *'}
+              <input
+                type="password"
+                value={form.contrasena}
+                onChange={(e) => cambiar('contrasena', e.target.value)}
+                required={!editandoId}
+                autoComplete="new-password"
+              />
             </label>
             <label className="campo">
               Teléfono
