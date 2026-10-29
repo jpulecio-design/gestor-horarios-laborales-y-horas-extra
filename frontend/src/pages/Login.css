@@ -1,0 +1,42 @@
+.login {
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.login-caja {
+  width: 100%;
+  max-width: 360px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.login-caja h1 {
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.login-caja label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.login-caja button {
+  margin-top: 8px;
+}
+
+.login-caja .error {
+  color: var(--danger);
+  font-size: 14px;
+  margin: 0;
+}

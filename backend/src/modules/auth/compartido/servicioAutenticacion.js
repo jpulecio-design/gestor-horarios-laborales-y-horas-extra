@@ -2,6 +2,8 @@ const repositorioUsuarios = require(
     "./repositorioUsuarios"
 );
 
+const seguridad = require("./seguridad");
+
 async function iniciarSesion(username, password) {
 
     const usuario = await repositorioUsuarios.buscarPorUsername(username);
@@ -13,7 +15,7 @@ async function iniciarSesion(username, password) {
         };
     }
 
-    if (usuario.password !== password) {
+    if (!seguridad.verificarContrasena(password, usuario.password)) {
         return {
             exito: false,
             mensaje: "Usuario o contraseña incorrectos"
@@ -27,14 +29,17 @@ async function iniciarSesion(username, password) {
         };
     }
 
+    const sesion = {
+        id: usuario.id,
+        username: usuario.username,
+        rol: usuario.rol
+    };
+
     return {
         exito: true,
         mensaje: "Inicio de sesión exitoso",
-        usuario: {
-            id: usuario.id,
-            username: usuario.username,
-            rol: usuario.rol
-        }
+        token: seguridad.firmarToken(sesion),
+        usuario: sesion
     };
 }
 

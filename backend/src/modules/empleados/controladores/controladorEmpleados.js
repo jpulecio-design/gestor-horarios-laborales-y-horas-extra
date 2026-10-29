@@ -6,6 +6,8 @@ const mensajeCambios = require("../servicios/mensajeCambios");
 
 const telegram = require("../../notificaciones/telegram");
 
+const seguridad = require("../../auth/compartido/seguridad");
+
 // todos los campos que maneja el formulario
 const CAMPOS = [
     "nombre", "apellido", "cedula", "correo", "contrasena", "telefono",
@@ -71,6 +73,9 @@ function registrarEmpleado(datos) {
         return Promise.resolve(false);
     }
 
+    // guardamos solo el hash de la contrasena, nunca el texto plano
+    datos.contrasena = seguridad.hashearSiHaceFalta(datos.contrasena);
+
     return repositorio.existeCedulaOCorreo(
         datos.cedula,
         datos.correo,
@@ -130,11 +135,19 @@ function guardarEdicion(id, datosNuevos) {
 
             empleadoViejo = empleado;
 
+            // contrasena vacia al editar = conservar la que ya tiene
+            if (datosNuevos.contrasena === "") {
+                datosNuevos.contrasena = empleado.usuario.contrasena;
+            }
+
             let error = validarDatos(datosNuevos);
 
             if (error !== "") {
                 throw new Error(error);
             }
+
+            // guardamos solo el hash de la contrasena, nunca el texto plano
+            datosNuevos.contrasena = seguridad.hashearSiHaceFalta(datosNuevos.contrasena);
 
             // para que la cedula y correo no choquen con otro empleado
             return repositorio.existeCedulaOCorreo(

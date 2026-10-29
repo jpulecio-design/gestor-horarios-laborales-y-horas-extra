@@ -11,7 +11,14 @@ function verificar(nombre, condicion, detalle) {
     }
 }
 
+// Cabecera de autorizacion para las peticiones que requieren sesion.
+function conToken(token) {
+    return { "Content-Type": "application/json", "Authorization": "Bearer " + token };
+}
+
 async function probar(base) {
+    let token = null;
+
     console.log("\n=== PRUEBA 1: health sin base de datos ===");
     let res = await fetch(base + "/api/test/health");
     let body = await res.json();
@@ -25,6 +32,8 @@ async function probar(base) {
     });
     body = await res.json();
     verificar("POST /api/auth/login con credenciales validas", body.exito === true, JSON.stringify(body));
+    verificar("el login devuelve un token", typeof body.token === "string" && body.token.length > 0, "token=" + String(body.token).slice(0, 12));
+    token = body.token;
 
     res = await fetch(base + "/api/auth/login", {
         method: "POST",
@@ -34,10 +43,17 @@ async function probar(base) {
     body = await res.json();
     verificar("POST /api/auth/login con clave incorrecta", body.exito === false, JSON.stringify(body));
 
+    console.log("\n=== PRUEBA 2b: endpoints protegidos sin token ===");
+    res = await fetch(base + "/api/empleados");
+    verificar("GET /api/empleados sin token -> 401", res.status === 401, "status=" + res.status);
+
+    res = await fetch(base + "/api/monitoreo/general", { headers: { Authorization: "Bearer token-falso" } });
+    verificar("GET /api/monitoreo/general con token invalido -> 401", res.status === 401, "status=" + res.status);
+
     console.log("\n=== PRUEBA 3: registrar empleado valido e invalido ===");
     res = await fetch(base + "/api/empleados", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: conToken(token),
         body: JSON.stringify({
             nombre: "Ana", apellido: "Gómez", cedula: "1001", correo: "ana@correo.com",
             contrasena: "1234", telefono: "3001112233", horaEntrada: "08:00",
@@ -50,7 +66,7 @@ async function probar(base) {
 
     res = await fetch(base + "/api/empleados", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: conToken(token),
         body: JSON.stringify({
             nombre: "", apellido: "", cedula: "", correo: "",
             contrasena: "", telefono: "", horaEntrada: "", horaSalida: "",
@@ -62,7 +78,7 @@ async function probar(base) {
     console.log("\n=== PRUEBA 4: horas extra y nomina enlazados ===");
     res = await fetch(base + "/api/horas-extra", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: conToken(token),
         body: JSON.stringify({ empleadoId: 1, fecha: "2026-08-10", tipo: "Nocturna", cantidadHoras: 2, valorHoraBase: 5000 })
     });
     body = await res.json();
@@ -70,7 +86,7 @@ async function probar(base) {
 
     res = await fetch(base + "/api/nomina", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: conToken(token),
         body: JSON.stringify({ empleadoId: 1, periodo: "2026-08", salarioBase: 1600000, horasRecargoNocturno: 0, horasRecargoFestivo: 0 })
     });
     body = await res.json();
@@ -81,18 +97,18 @@ async function probar(base) {
     );
 
     console.log("\n=== PRUEBA 5: endpoints de listado ===");
-    res = await fetch(base + "/api/empleados/1");
+    res = await fetch(base + "/api/empleados/1", { headers: conToken(token) });
     verificar("GET /api/empleados/1 devuelve 200", res.status === 200, "status=" + res.status);
 
-    res = await fetch(base + "/api/horas-extra");
+    res = await fetch(base + "/api/horas-extra", { headers: conToken(token) });
     body = await res.json();
     verificar("GET /api/horas-extra lista 1 registro", res.status === 200 && body.length === 1, "len=" + body.length);
 
-    res = await fetch(base + "/api/nomina/empleado/1");
+    res = await fetch(base + "/api/nomina/empleado/1", { headers: conToken(token) });
     body = await res.json();
     verificar("GET /api/nomina/empleado/1 lista 1 nomina", res.status === 200 && body.length === 1, "len=" + body.length);
 
-    res = await fetch(base + "/api/empleados/999");
+    res = await fetch(base + "/api/empleados/999", { headers: conToken(token) });
     verificar("GET /api/empleados/999 devuelve 404", res.status === 404, "status=" + res.status);
 }
 
