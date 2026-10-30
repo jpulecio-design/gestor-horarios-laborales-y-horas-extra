@@ -156,6 +156,14 @@ function guardarEdicion(id, datosNuevos, detalle) {
                 datosNuevos.estado = empleado.usuario.estado;
             }
 
+            // un inactivo no se edita, salvo que en la misma edicion lo vuelvan a activar
+            if (empleado.usuario.estado === "Inactivo" && datosNuevos.estado !== "Activo") {
+                detalle.inactivo = true;
+                throw new Error(
+                    "este empleado está inactivo. Actívalo con el botón 'Activar' antes de editar sus datos."
+                );
+            }
+
             if (sinContrasena) {
                 datosNuevos.contrasena = empleado.usuario.contrasena;
             }

@@ -63,6 +63,7 @@ export const apiHorarios = {
 }
 
 export const apiRelevos = {
+  todas: () => cliente.get('/horarios/relevos').then((r) => r.data),
   companeros: () => cliente.get('/horarios/relevos/companeros').then((r) => r.data),
   agenda: (empleadoId, dias) =>
     cliente

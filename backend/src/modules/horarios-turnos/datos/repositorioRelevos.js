@@ -23,6 +23,11 @@ const TABLAS_RELEVO =
     "JOIN EMPLEADO sol ON sol.id_empleado = s.id_empleado_solicitante " +
     "JOIN EMPLEADO com ON com.id_empleado = s.id_empleado_companero";
 
+// una pendiente cuyo turno ya paso se considera vencida y no se lista
+// (las confirmadas y rechazadas se siguen viendo como historial)
+const SIN_VENCIDAS =
+    "NOT (s.estado = 'Pendiente' AND h.fecha < TRUNC(SYSDATE))";
+
 // HORARIOS
 
 // cada fila de HORARIO_ASIGNADO es el turno de UN empleado en UN dia
@@ -225,6 +230,7 @@ function obtenerEnviadas(empleadoId) {
     let sql =
         "SELECT " + COLUMNAS_RELEVO + " " + TABLAS_RELEVO + " " +
         "WHERE s.id_empleado_solicitante = :empleadoId " +
+        "AND " + SIN_VENCIDAS + " " +
         "ORDER BY s.fecha_solicitud DESC";
 
     return database.ejecutar(sql, { empleadoId: empleadoId })
@@ -238,9 +244,23 @@ function obtenerRecibidas(empleadoId) {
     let sql =
         "SELECT " + COLUMNAS_RELEVO + " " + TABLAS_RELEVO + " " +
         "WHERE s.id_empleado_companero = :empleadoId " +
+        "AND " + SIN_VENCIDAS + " " +
         "ORDER BY s.fecha_solicitud DESC";
 
     return database.ejecutar(sql, { empleadoId: empleadoId })
+        .then(function (resultado) {
+            return resultado.rows.map(relevo.relevoDesdeFila);
+        });
+}
+
+// todas las solicitudes (vista de administrador y contadora)
+function obtenerTodas() {
+    let sql =
+        "SELECT " + COLUMNAS_RELEVO + " " + TABLAS_RELEVO + " " +
+        "WHERE " + SIN_VENCIDAS + " " +
+        "ORDER BY h.fecha DESC, s.fecha_solicitud DESC";
+
+    return database.ejecutar(sql, {})
         .then(function (resultado) {
             return resultado.rows.map(relevo.relevoDesdeFila);
         });
@@ -273,5 +293,6 @@ module.exports = {
     buscarSolicitudPorId: buscarSolicitudPorId,
     obtenerEnviadas: obtenerEnviadas,
     obtenerRecibidas: obtenerRecibidas,
+    obtenerTodas: obtenerTodas,
     responderSolicitud: responderSolicitud
 };

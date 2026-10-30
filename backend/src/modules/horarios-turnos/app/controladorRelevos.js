@@ -10,12 +10,19 @@ const FORMATO_FECHA = /^\d{4}-\d{2}-\d{2}$/;
 const DIAS_AGENDA = 14; // cuantos dias hacia adelante se muestran
 
 // turno de un empleado en una fecha: primero la excepcion, si no la plantilla
+// (igual que la agenda: un dia ya cedido no vuelve a salir de la plantilla)
 
 async function turnoDeFecha(empleadoId, fecha) {
     let excepcion = await repositorio.buscarHorarioPorFecha(empleadoId, fecha);
     if (excepcion !== null) {
         excepcion.origen = "Fijado";   // ese dia ya es una fila real, no un calculo
         return excepcion;
+    }
+
+    // si ya lo cedio, ese dia es del compañero y no se materializa otro turno
+    let cedidas = await repositorio.obtenerFechasCedidas(empleadoId, fecha, fecha);
+    if (cedidas.indexOf(fecha) !== -1) {
+        return null;
     }
 
     let asignaciones = await repositorioHorarios.obtenerAsignacionesPorEmpleado(empleadoId);
@@ -167,6 +174,15 @@ async function responderRelevo(datos) {
         return { exito: false, mensaje: "ERROR: esa solicitud ya está " + solicitud.estado + "." };
     }
 
+    // un turno que ya paso no puede cambiar de dueño
+    if (solicitud.horario.fecha < relevo.fechaDeHoy()) {
+        return {
+            exito: false,
+            mensaje: "ERROR: el turno del " + solicitud.horario.fecha +
+                " ya pasó, la solicitud venció y no se puede responder."
+        };
+    }
+
     // que no le quede el turno cruzado con uno propio del mismo dia
     if (respuesta === "Confirmado") {
         let turnoPropio = await turnoDeFecha(idEmpleado, solicitud.horario.fecha);
@@ -216,11 +232,17 @@ function relevosRecibidos(empleadoId) {
     return repositorio.obtenerRecibidas(empleadoId);
 }
 
+// para administrador y contadora: todos los cambios de turno
+function todosLosRelevos() {
+    return repositorio.obtenerTodas();
+}
+
 module.exports = {
     turnoDeFecha: turnoDeFecha,
     agendaDeEmpleado: agendaDeEmpleado,
     solicitarRelevo: solicitarRelevo,
     responderRelevo: responderRelevo,
     relevosEnviados: relevosEnviados,
-    relevosRecibidos: relevosRecibidos
+    relevosRecibidos: relevosRecibidos,
+    todosLosRelevos: todosLosRelevos
 };
