@@ -18,7 +18,7 @@ async function iniciarSesion(username, password) {
         throw new Error("Credenciales invalidas.");
     }
 
-    const token = seguridad.generarToken({
+    const token = seguridad.firmarToken({
         id: usuario.id,
         username: usuario.username,
         rol: usuario.rol

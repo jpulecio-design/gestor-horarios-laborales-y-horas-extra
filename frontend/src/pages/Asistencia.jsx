@@ -158,95 +158,97 @@ function Asistencia() {
       </Tarjeta>
 
       {!esEmpleado && (
-      <Tarjeta titulo="Código QR del empleado">
-        <div className="filtros">
-          <label className="campo">
-            Empleado
-            <select value={empleadoQr} onChange={(e) => verQr(e.target.value)}>
-              <option value="">Selecciona…</option>
-              {empleados.map((empleado) => (
-                <option key={empleado.usuario.id} value={empleado.usuario.id}>
-                  {empleado.usuario.id} - {nombreCompleto(empleado)}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        {qr && (
-          <div className="qr-caja">
-            <img src={qr.imagen} alt="Código QR del empleado" />
-            <code>{qr.codigoQr}</code>
-          </div>
-        )}
-      </Tarjeta>
-
-      <Tarjeta titulo="Cálculo automático de horas trabajadas">
-        <div className="filtros">
-          <label className="campo">
-            Empleado
-            <select value={empleadoCalc} onChange={(e) => setEmpleadoCalc(e.target.value)}>
-              <option value="">Seleccionar...</option>
-              {empleados.map((empleado) => (
-                <option key={empleado.usuario.id} value={empleado.usuario.id}>
-                  {empleado.usuario.id} - {nombreCompleto(empleado)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="campo">
-            Desde
-            <input type="date" value={filtroDesde} onChange={(e) => setFiltroDesde(e.target.value)} />
-          </label>
-          <label className="campo">
-            Hasta
-            <input type="date" value={filtroHasta} onChange={(e) => setFiltroHasta(e.target.value)} />
-          </label>
-          <div className="formulario-acciones" style={{ alignItems: 'end' }}>
-            <button type="button" onClick={calcularHoras} disabled={calculando}>
-              {calculando ? 'Calculando...' : 'Calcular'}
-            </button>
-          </div>
-        </div>
-        {reporteHoras && (
-          <div style={{ marginTop: '1rem' }}>
-            <div className="resumen-linea"><span>Horas trabajadas</span><span>{reporteHoras.totales.horasTrabajadas} h</span></div>
-            <div className="resumen-linea"><span>Horas programadas</span><span>{reporteHoras.totales.horasProgramadas} h</span></div>
-            <div className="resumen-linea"><span>Tardanzas</span><span>{reporteHoras.totales.horasTarde} h ({reporteHoras.totales.minutosTarde} min)</span></div>
-            <div className="resumen-linea"><span>Días completos</span><span>{reporteHoras.totales.diasCompletos}</span></div>
-            <div className="resumen-linea"><span>Días ausentes</span><span>{reporteHoras.totales.diasAusentes}</span></div>
-            <div className="tabla-envoltura" style={{ marginTop: '1rem' }}>
-              <table className="tabla">
-                <thead>
-                  <tr>
-                    <th>Fecha</th>
-                    <th>Turno</th>
-                    <th>Prog. Entrada/Salida</th>
-                    <th>Entrada</th>
-                    <th>Salida</th>
-                    <th>Horas trab.</th>
-                    <th>Horas prog.</th>
-                    <th>Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {reporteHoras.detalle.map((d) => (
-                    <tr key={d.fecha}>
-                      <td>{d.fecha}</td>
-                      <td>{d.turno || '-'}</td>
-                      <td>{d.horaEntradaProgramada || '-'} / {d.horaSalidaProgramada || '-'}</td>
-                      <td>{d.entrada || '-'}</td>
-                      <td>{d.salida || '-'}</td>
-                      <td>{d.horasTrabajadas}</td>
-                      <td>{d.horasProgramadas}</td>
-                      <td>{d.estado}</td>
-                    </tr>
+        <>
+          <Tarjeta titulo="Código QR del empleado">
+            <div className="filtros">
+              <label className="campo">
+                Empleado
+                <select value={empleadoQr} onChange={(e) => verQr(e.target.value)}>
+                  <option value="">Selecciona…</option>
+                  {empleados.map((empleado) => (
+                    <option key={empleado.usuario.id} value={empleado.usuario.id}>
+                      {empleado.usuario.id} - {nombreCompleto(empleado)}
+                    </option>
                   ))}
-                </tbody>
-              </table>
+                </select>
+              </label>
             </div>
-          </div>
-        )}
-      </Tarjeta>
+            {qr && (
+              <div className="qr-caja">
+                <img src={qr.imagen} alt="Código QR del empleado" />
+                <code>{qr.codigoQr}</code>
+              </div>
+            )}
+          </Tarjeta>
+
+          <Tarjeta titulo="Cálculo automático de horas trabajadas">
+            <div className="filtros">
+              <label className="campo">
+                Empleado
+                <select value={empleadoCalc} onChange={(e) => setEmpleadoCalc(e.target.value)}>
+                  <option value="">Seleccionar...</option>
+                  {empleados.map((empleado) => (
+                    <option key={empleado.usuario.id} value={empleado.usuario.id}>
+                      {empleado.usuario.id} - {nombreCompleto(empleado)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="campo">
+                Desde
+                <input type="date" value={filtroDesde} onChange={(e) => setFiltroDesde(e.target.value)} />
+              </label>
+              <label className="campo">
+                Hasta
+                <input type="date" value={filtroHasta} onChange={(e) => setFiltroHasta(e.target.value)} />
+              </label>
+              <div className="formulario-acciones" style={{ alignItems: 'end' }}>
+                <button type="button" onClick={calcularHoras} disabled={calculando}>
+                  {calculando ? 'Calculando...' : 'Calcular'}
+                </button>
+              </div>
+            </div>
+            {reporteHoras && (
+              <div style={{ marginTop: '1rem' }}>
+                <div className="resumen-linea"><span>Horas trabajadas</span><span>{reporteHoras.totales.horasTrabajadas} h</span></div>
+                <div className="resumen-linea"><span>Horas programadas</span><span>{reporteHoras.totales.horasProgramadas} h</span></div>
+                <div className="resumen-linea"><span>Tardanzas</span><span>{reporteHoras.totales.horasTarde} h ({reporteHoras.totales.minutosTarde} min)</span></div>
+                <div className="resumen-linea"><span>Días completos</span><span>{reporteHoras.totales.diasCompletos}</span></div>
+                <div className="resumen-linea"><span>Días ausentes</span><span>{reporteHoras.totales.diasAusentes}</span></div>
+                <div className="tabla-envoltura" style={{ marginTop: '1rem' }}>
+                  <table className="tabla">
+                    <thead>
+                      <tr>
+                        <th>Fecha</th>
+                        <th>Turno</th>
+                        <th>Prog. Entrada/Salida</th>
+                        <th>Entrada</th>
+                        <th>Salida</th>
+                        <th>Horas trab.</th>
+                        <th>Horas prog.</th>
+                        <th>Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {reporteHoras.detalle.map((d) => (
+                        <tr key={d.fecha}>
+                          <td>{d.fecha}</td>
+                          <td>{d.turno || '-'}</td>
+                          <td>{d.horaEntradaProgramada || '-'} / {d.horaSalidaProgramada || '-'}</td>
+                          <td>{d.entrada || '-'}</td>
+                          <td>{d.salida || '-'}</td>
+                          <td>{d.horasTrabajadas}</td>
+                          <td>{d.horasProgramadas}</td>
+                          <td>{d.estado}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </Tarjeta>
+        </>
       )}
 
       {corrigiendo && (
