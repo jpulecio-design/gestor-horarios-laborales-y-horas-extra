@@ -51,6 +51,15 @@ export const apiHorarios = {
   porEmpleado: (id) => cliente.get(`/horarios/empleado/${id}`).then((r) => r.data),
   hoy: (id) => cliente.get(`/horarios/empleado/${id}/hoy`).then((r) => r.data),
   semana: (id) => cliente.get(`/horarios/empleado/${id}/semana`).then((r) => r.data),
+  desactivarAsignacion: (id) =>
+    cliente.delete(`/horarios/asignaciones/${id}`).then((r) => r.data),
+  reactivarAsignacion: (id) =>
+    cliente.put(`/horarios/asignaciones/${id}/reactivar`).then((r) => r.data),
+  quitarDiaBase: (empleadoId, fecha) =>
+    cliente.delete(`/horarios/base/${empleadoId}/${fecha}`).then((r) => r.data),
+  eliminarDia: (empleadoId, fecha) =>
+  cliente.delete(`/horarios/programacion/${empleadoId}/${fecha}`).then((r) => r.data),
+
 }
 
 export const apiRelevos = {
