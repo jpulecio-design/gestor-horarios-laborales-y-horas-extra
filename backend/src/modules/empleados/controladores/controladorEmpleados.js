@@ -125,7 +125,10 @@ function registrarEmpleado(datos) {
 
 // aplica los cambios sobre el empleado con ese id y avisa por Telegram
 // devuelve una promesa con true o false
-function guardarEdicion(id, datosNuevos) {
+// detalle es opcional si se envia un objeto, ahi se deja el motivo cuando la API pueda responderle al frontend con el mensaje real
+function guardarEdicion(id, datosNuevos, detalle) {
+
+    detalle = detalle || {};
 
     // si no mandan estado o contraseña se conservan los que ya tenia
     // (completarDatos pondria el estado en "Activo" y reactivaria a un inactivo)
@@ -141,6 +144,7 @@ function guardarEdicion(id, datosNuevos) {
         .then(function (empleado) {
 
             if (empleado === null) {
+                detalle.noExiste = true;
                 throw new Error(
                     "no existe un empleado con id " + id + "."
                 );
@@ -191,6 +195,8 @@ function guardarEdicion(id, datosNuevos) {
 
                 console.log("No hubo cambios.");
 
+                detalle.sinCambios = true;
+
                 return false;
             }
 
@@ -205,6 +211,8 @@ function guardarEdicion(id, datosNuevos) {
         .catch(function (error) {
 
             console.log("ERROR: " + error.message);
+
+            detalle.error = error.message;
 
             return false;
         });
