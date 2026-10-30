@@ -3,8 +3,9 @@
     "dotenv": "^17.4.2",
     "exceljs": "^4.4.0",
     "express": "^5.2.1",
-    "multer": "^2.4.0",
     "jsonwebtoken": "^9.0.3",
+    "multer": "^2.4.0",
+    "nodemailer": "^10.3.1",
     "oracledb": "^7.0.1",
     "prompt-sync": "^4.2.0",
     "qrcode": "^1.5.4"
