@@ -6,3 +6,6 @@ qr-empleado-*.png
 
 # Reportes de Excel generados por la consola de reportes
 reporte-*.xlsx
+
+# Copias de seguridad generadas por el modulo de backups
+respaldos/

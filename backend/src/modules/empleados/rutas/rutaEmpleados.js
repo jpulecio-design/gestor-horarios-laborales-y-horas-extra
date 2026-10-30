@@ -11,14 +11,15 @@ const router = express.Router();
 const ADMINISTRADOR = "Administrador";
 const LECTURA_EMPLEADOS = ["Administrador", "Contadora"];
 
-// Copia del empleado sin la contrasena: el hash nunca sale por la API.
+// quita el hash de la contraseña para que nunca salga del servidor
 function sinContrasena(empleado) {
-    if (empleado === null) {
-        return null;
+    if (empleado === null || empleado === undefined) {
+        return empleado;
     }
-    let usuario = Object.assign({}, empleado.usuario);
-    delete usuario.contrasena;
-    return Object.assign({}, empleado, { usuario: usuario });
+    let copia = Object.assign({}, empleado);
+    copia.usuario = Object.assign({}, empleado.usuario);
+    delete copia.usuario.contrasena;
+    return copia;
 }
 
 // GET /api/empleados
@@ -110,16 +111,29 @@ router.post("/", autorizar(ADMINISTRADOR), (req, res) => {
 
 router.put("/:id", autorizar(ADMINISTRADOR), (req, res) => {
 
+    // aqui el controlador deja el motivo si no se pudo editar
+    let detalle = {};
+
     controlador.guardarEdicion(
         Number(req.params.id),
-        req.body
+        req.body,
+        detalle
     )
         .then(function (editado) {
 
-            if (!editado) {
+            if (!editado && detalle.noExiste) {
+
+                res.status(404).json({
+                    error: "No existe un empleado con ese id."
+                });
+
+                return;
+            }
+
+            if (!editado && !detalle.sinCambios) {
 
                 res.status(400).json({
-                    error: "No se pudo editar el empleado."
+                    error: detalle.error || "No se pudo editar el empleado."
                 });
 
                 return;
@@ -130,7 +144,83 @@ router.put("/:id", autorizar(ADMINISTRADOR), (req, res) => {
             )
                 .then(function (empleado) {
 
-                    res.json(sinContrasena(empleado));
+                    let respuesta = sinContrasena(empleado);
+
+                    // el frontend lo usa para avisar que no habia nada que guardar
+                    if (detalle.sinCambios) {
+                        respuesta.sinCambios = true;
+                    }
+
+                    res.json(respuesta);
+
+                });
+
+        })
+        .catch(function (error) {
+
+            res.status(500).json({
+                error: error.message
+            });
+
+        });
+
+});
+
+// Activa o inactiva un empleado 
+
+router.patch("/:id/estado", autorizar(ADMINISTRADOR), (req, res) => {
+
+    let id = Number(req.params.id);
+    let nuevoEstado = req.body.estado;
+
+    if (nuevoEstado !== "Activo" && nuevoEstado !== "Inactivo") {
+
+        res.status(400).json({
+            error: "El estado debe ser 'Activo' o 'Inactivo'."
+        });
+
+        return;
+    }
+
+    repositorio.buscarEmpleadoPorId(id)
+        .then(function (empleado) {
+
+            if (empleado === null) {
+
+                res.status(404).json({
+                    error: "No existe un empleado con ese id."
+                });
+
+                return;
+            }
+
+            if (empleado.usuario.estado === nuevoEstado) {
+
+                res.status(400).json({
+                    error: "El empleado ya estaba " + nuevoEstado + "."
+                });
+
+                return;
+            }
+
+            return controlador.cambiarEstado(id, nuevoEstado)
+                .then(function (cambiado) {
+
+                    if (!cambiado) {
+
+                        res.status(400).json({
+                            error: "No se pudo cambiar el estado del empleado."
+                        });
+
+                        return;
+                    }
+
+                    return repositorio.buscarEmpleadoPorId(id)
+                        .then(function (actualizado) {
+
+                            res.json(sinContrasena(actualizado));
+
+                        });
 
                 });
 
