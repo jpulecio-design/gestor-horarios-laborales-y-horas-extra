@@ -1,4 +1,5 @@
-require("dotenv").config({ quiet: true });
+
+require("dotenv").config({ path: require("path").join(__dirname, "../../.env"), quiet: true });
 
 const oracledb = require("oracledb");
 
@@ -77,6 +78,46 @@ function ejecutar(sql, parametros) {
         });
 }
 
+// Ejecuta varias sentencias en UNA sola transaccion: si todas salen bien se
+// confirman juntas (commit); si alguna falla, se deshacen todas (rollback).
+// "trabajo" recibe ejecutarEn(sql, parametros) y debe devolver una promesa.
+//   database.transaccion(function (ejecutarEn) {
+//       return ejecutarEn("UPDATE ...", {...}).then(...);
+//   });
+function transaccion(trabajo) {
+    let conexion = null;
+
+    return getConnection()
+        .then(function (nuevaConexion) {
+            conexion = nuevaConexion;
+
+            function ejecutarEn(sql, parametros) {
+                return conexion.execute(sql, parametros || {}, {
+                    autoCommit: false,                       // se confirma al final, todo junto
+                    outFormat: oracledb.OUT_FORMAT_OBJECT
+                });
+            }
+
+            return Promise.resolve()
+                .then(function () { return trabajo(ejecutarEn); })
+                .then(function (resultado) {
+                    return conexion.commit().then(function () { return resultado; });
+                })
+                .catch(function (error) {
+                    // se deshace todo y se devuelve el error original
+                    return conexion.rollback().then(
+                        function () { throw error; },
+                        function () { throw error; }
+                    );
+                });
+        })
+        .finally(function () {
+            if (conexion !== null) {
+                return conexion.close();
+            }
+        });
+}
+
 // Cierra el pool (se usa al apagar el proceso).
 function cerrar() {
     if (pool === null) {
@@ -90,6 +131,7 @@ function cerrar() {
 
 module.exports = {
     ejecutar: ejecutar,
+    transaccion: transaccion,
     getConnection: getConnection,
     cerrar: cerrar,
     oracledb: oracledb // se exporta para usar sus constantes (ej: oracledb.BIND_OUT)

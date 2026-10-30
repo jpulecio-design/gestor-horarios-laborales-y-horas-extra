@@ -254,3 +254,15 @@
   background: #fee2e2;
   color: #b91c1c;
 }
+
+.detalle-tabla {
+  border-top: 1px solid var(--border);
+  padding: 12px 0;
+  font-size: 14px;
+}
+
+.detalle-tabla summary {
+  cursor: pointer;
+  font-weight: 600;
+  margin-bottom: 8px;
+}

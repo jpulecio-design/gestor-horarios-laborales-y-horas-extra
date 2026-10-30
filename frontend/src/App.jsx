@@ -11,6 +11,7 @@ import Asistencia from './pages/Asistencia'
 import Nomina from './pages/Nomina'
 import Monitoreo from './pages/Monitoreo'
 import Reportes from './pages/Reportes'
+import Relevos from './pages/Relevos'
 import NoEncontrado from './pages/NoEncontrado'
 
 // Roles con acceso de gestión (todas las operaciones).
@@ -35,6 +36,7 @@ function App() {
 
           {/* Accesibles también por el propio empleado */}
           <Route path="horarios" element={<Horarios />} />
+          <Route path="relevos" element={<Relevos />} />
           <Route path="horas-extra" element={<HorasExtra />} />
           <Route path="asistencia" element={<Asistencia />} />
           <Route path="nomina" element={<Nomina />} />

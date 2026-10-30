@@ -22,6 +22,8 @@ export const apiEmpleados = {
   crear: (empleado) => cliente.post('/empleados', empleado).then((r) => r.data),
   actualizar: (id, empleado) =>
     cliente.put(`/empleados/${id}`, empleado).then((r) => r.data),
+  cambiarEstado: (id, estado) =>
+    cliente.patch(`/empleados/${id}/estado`, { estado }).then((r) => r.data),
 }
 
 export const apiHorasExtra = {
@@ -66,6 +68,29 @@ export const apiHorarios = {
   porEmpleado: (id) => cliente.get(`/horarios/empleado/${id}`).then((r) => r.data),
   hoy: (id) => cliente.get(`/horarios/empleado/${id}/hoy`).then((r) => r.data),
   semana: (id) => cliente.get(`/horarios/empleado/${id}/semana`).then((r) => r.data),
+  desactivarAsignacion: (id) =>
+    cliente.delete(`/horarios/asignaciones/${id}`).then((r) => r.data),
+  reactivarAsignacion: (id) =>
+    cliente.put(`/horarios/asignaciones/${id}/reactivar`).then((r) => r.data),
+  quitarDiaBase: (empleadoId, fecha) =>
+    cliente.delete(`/horarios/base/${empleadoId}/${fecha}`).then((r) => r.data),
+  eliminarDia: (empleadoId, fecha) =>
+  cliente.delete(`/horarios/programacion/${empleadoId}/${fecha}`).then((r) => r.data),
+
+}
+
+export const apiRelevos = {
+  todas: () => cliente.get('/horarios/relevos').then((r) => r.data),
+  companeros: () => cliente.get('/horarios/relevos/companeros').then((r) => r.data),
+  agenda: (empleadoId, dias) =>
+    cliente
+      .get(`/horarios/relevos/agenda/${empleadoId}`, { params: dias ? { dias } : {} })
+      .then((r) => r.data),
+  enviadas: (empleadoId) => cliente.get(`/horarios/relevos/enviadas/${empleadoId}`).then((r) => r.data),
+  recibidas: (empleadoId) => cliente.get(`/horarios/relevos/recibidas/${empleadoId}`).then((r) => r.data),
+  obtener: (id) => cliente.get(`/horarios/relevos/${id}`).then((r) => r.data),
+  solicitar: (datos) => cliente.post('/horarios/relevos', datos).then((r) => r.data),
+  responder: (id, datos) => cliente.patch(`/horarios/relevos/${id}/respuesta`, datos).then((r) => r.data),
 }
 
 export const apiMonitoreo = {
@@ -85,4 +110,14 @@ export const apiReportes = {
         responseType: 'blob',
       })
       .then((r) => r.data),
+}
+
+export const apiBackups = {
+  estado: () => cliente.get('/backups').then((r) => r.data),
+  crear: () => cliente.post('/backups').then((r) => r.data),
+  descargarJson: (id) =>
+    cliente.get(`/backups/${id}/descarga`, { responseType: 'blob' }).then((r) => r.data),
+  descargarExcel: (id) =>
+    cliente.get(`/backups/${id}/excel`, { responseType: 'blob' }).then((r) => r.data),
+  comparar: (id) => cliente.get(`/backups/${id}/comparacion`).then((r) => r.data),
 }

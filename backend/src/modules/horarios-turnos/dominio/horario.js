@@ -60,16 +60,50 @@ function asignacionCubreFecha(asignacion, fechaTexto) {
     return true;
 }
 
-// Devuelve el turno vigente para esa fecha o null si no hay ninguno.
+// Una asignacion con fecha "hasta" es un turno especial (temporal): mientras dura, reemplaza
+// al horario base del empleado, que es la asignacion sin fecha final. Al pasar la fecha
+// "hasta" el especial deja de aplicar y el base vuelve a verse solo.
+function esEspecial(asignacion) {
+    return !esDiaLibre(asignacion) &&
+        asignacion.fechaHasta !== null && asignacion.fechaHasta !== undefined && asignacion.fechaHasta !== "";
+}
+
+// Un "dia libre" quita el turno base de UN solo dia (desde = hasta). Se guarda como una asignacion
+// de ese dia con estado "Descanso", asi no hace falta tocar la estructura de la tabla.
+function esDiaLibre(asignacion) {
+    return asignacion.estado === "Descanso";
+}
+
+// true si la asignacion aplica en esa fecha: esta vigente y su turno cubre ese dia de la semana.
+function asignacionAplicaEn(asignacion, fechaTexto) {
+    return asignacionCubreFecha(asignacion, fechaTexto) &&
+        turnoCubreDia(asignacion.turno, aFecha(fechaTexto));
+}
+
+// Devuelve el turno vigente para esa fecha (con el id y el tipo de la asignacion que lo aplica)
+// o null si no hay ninguno. Si coinciden un especial y el base, gana el especial.
+// Un dia libre anula el turno base de ese dia, pero no un turno especial.
 function turnoDeFecha(asignaciones, fechaTexto) {
-    let fecha = aFecha(fechaTexto);
+    let elegida = null;
+    let hayDiaLibre = false;
     for (let i = 0; i < asignaciones.length; i++) {
         let a = asignaciones[i];
-        if (asignacionCubreFecha(a, fechaTexto) && turnoCubreDia(a.turno, fecha)) {
-            return a.turno;
+        if (!asignacionAplicaEn(a, fechaTexto)) {
+            continue;
+        }
+        if (esDiaLibre(a)) {
+            hayDiaLibre = true;
+        } else if (elegida === null || (esEspecial(a) && !esEspecial(elegida))) {
+            elegida = a;
         }
     }
-    return null;
+    if (elegida === null || (hayDiaLibre && !esEspecial(elegida))) {
+        return null;
+    }
+    return Object.assign({}, elegida.turno, {
+        asignacionId: elegida.id,
+        tipoAsignacion: esEspecial(elegida) ? "Especial" : "Base"
+    });
 }
 
 // Grilla de 7 dias (lunes a domingo) con el turno que aplica a cada uno.
@@ -91,7 +125,18 @@ function construirSemana(asignaciones, fechaReferenciaTexto) {
     return dias;
 }
 
+// true si la fecha "AAAA-MM-DD" existe de verdad (rechaza 2026-02-30, 2026-13-01...)
+function fechaExiste(texto) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(texto || ""))) {
+        return false;
+    }
+    return aTexto(aFecha(texto)) === texto;
+}
+
+// La deteccion de choques entre asignaciones (necesita las horas) esta en programacion.js.
+
 module.exports = {
+    fechaExiste: fechaExiste,
     NOMBRES_DIA: NOMBRES_DIA,
     listaDias: listaDias,
     aFecha: aFecha,
@@ -99,6 +144,9 @@ module.exports = {
     inicioSemana: inicioSemana,
     turnoCubreDia: turnoCubreDia,
     asignacionCubreFecha: asignacionCubreFecha,
+    asignacionAplicaEn: asignacionAplicaEn,
+    esEspecial: esEspecial,
+    esDiaLibre: esDiaLibre,
     turnoDeFecha: turnoDeFecha,
     construirSemana: construirSemana
 };

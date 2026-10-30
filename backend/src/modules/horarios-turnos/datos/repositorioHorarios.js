@@ -133,12 +133,15 @@ function buscarAsignacionPorId(id) {
         });
 }
 
-// devuelve una promesa con las asignaciones (con su turno) de un empleado
-function obtenerAsignacionesPorEmpleado(empleadoId) {
+// devuelve una promesa con las asignaciones (con su turno) de un empleado.
+// Por defecto solo las vigentes: activas y dias libres (las que cuentan para el calendario);
+// con incluirInactivas = true tambien las desactivadas (para mostrar el historial).
+function obtenerAsignacionesPorEmpleado(empleadoId, incluirInactivas) {
     let sql =
         "SELECT " + COLUMNAS_ASIGNACION + " " +
         "FROM ASIGNACION_HORARIO a JOIN TURNO t ON t.id_turno = a.id_turno " +
         "WHERE a.id_empleado = :empleadoId " +
+        (incluirInactivas ? "" : "AND a.estado IN ('Activo', 'Descanso') ") +
         "ORDER BY a.fecha_desde, a.id_asignacion";
 
     return database.ejecutar(sql, { empleadoId: empleadoId })
@@ -167,6 +170,62 @@ function obtenerAsignacionVigentePorFecha(empleadoId, fecha) {
         });
 }
 
+// Desactiva una asignacion (no borra la fila). Devuelve true si estaba activa y se desactivo.
+function desactivarAsignacion(id) {
+    let sql =
+        "UPDATE ASIGNACION_HORARIO SET estado = 'Inactivo' " +
+        "WHERE id_asignacion = :id AND estado = 'Activo'";
+
+    return database.ejecutar(sql, { id: id })
+        .then(function (resultado) {
+            return resultado.rowsAffected > 0;
+        });
+}
+
+// Vuelve a activar una asignacion desactivada. Devuelve true si estaba desactivada.
+function activarAsignacion(id) {
+    let sql =
+        "UPDATE ASIGNACION_HORARIO SET estado = 'Activo' " +
+        "WHERE id_asignacion = :id AND estado = 'Inactivo'";
+
+    return database.ejecutar(sql, { id: id })
+        .then(function (resultado) {
+            return resultado.rowsAffected > 0;
+        });
+}
+
+// Quita el turno base de UN dia: guarda una asignacion de ese solo dia con estado 'Descanso'.
+function agregarDiaLibre(datos) {
+    let sql =
+        "INSERT INTO ASIGNACION_HORARIO (id_empleado, id_turno, fecha_desde, fecha_hasta, estado) " +
+        "VALUES (:empleadoId, :turnoId, TO_DATE(:fechaDesde, 'YYYY-MM-DD'), " +
+        "        TO_DATE(:fechaHasta, 'YYYY-MM-DD'), 'Descanso') " +
+        "RETURNING id_asignacion INTO :id";
+
+    let parametros = {
+        empleadoId: datos.empleadoId,
+        turnoId: datos.turnoId,
+        fechaDesde: datos.fecha,
+        fechaHasta: datos.fecha,
+        id: { dir: database.oracledb.BIND_OUT, type: database.oracledb.NUMBER }
+    };
+
+    return database.ejecutar(sql, parametros)
+        .then(function (resultado) {
+            return buscarAsignacionPorId(resultado.outBinds.id[0]);
+        });
+}
+
+// Borra un dia libre (el turno base de ese dia vuelve). Solo borra filas con estado 'Descanso'.
+function eliminarDiaLibre(id) {
+    let sql = "DELETE FROM ASIGNACION_HORARIO WHERE id_asignacion = :id AND estado = 'Descanso'";
+
+    return database.ejecutar(sql, { id: id })
+        .then(function (resultado) {
+            return resultado.rowsAffected > 0;
+        });
+}
+
 module.exports = {
     agregarTurno: agregarTurno,
     obtenerTurnos: obtenerTurnos,
@@ -175,5 +234,9 @@ module.exports = {
     agregarAsignacion: agregarAsignacion,
     buscarAsignacionPorId: buscarAsignacionPorId,
     obtenerAsignacionesPorEmpleado: obtenerAsignacionesPorEmpleado,
-    obtenerAsignacionVigentePorFecha: obtenerAsignacionVigentePorFecha
+    obtenerAsignacionVigentePorFecha: obtenerAsignacionVigentePorFecha,
+    desactivarAsignacion: desactivarAsignacion,
+    activarAsignacion: activarAsignacion,
+    agregarDiaLibre: agregarDiaLibre,
+    eliminarDiaLibre: eliminarDiaLibre
 };

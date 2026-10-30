@@ -42,9 +42,9 @@ function Empleados() {
     setMensaje(null)
   }
 
+  // primero trae el detalle y luego abre el formulario ya lleno
   async function editar(empleado) {
     setMensaje(null)
-    setMostrarForm(true)
     try {
       const detalle = await apiEmpleados.obtener(empleado.usuario.id)
       setForm({
@@ -52,7 +52,8 @@ function Empleados() {
         apellido: detalle.usuario.apellido,
         cedula: detalle.usuario.cedula,
         correo: detalle.usuario.correo,
-        contrasena: detalle.usuario.contrasena,
+        // el backend ya no envía la contraseña; vacía = se conserva la actual
+        contrasena: '',
         telefono: detalle.usuario.telefono,
         fechaIngreso: detalle.fechaIngreso,
         cargo: detalle.cargo,
@@ -63,6 +64,26 @@ function Empleados() {
         contactoParentesco: detalle.contactoEmergencia.parentesco,
       })
       setEditandoId(empleado.usuario.id)
+      setMostrarForm(true)
+      // el formulario esta arriba del listado
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } catch (err) {
+      setMensaje({ tipo: 'error', texto: err.message })
+    }
+  }
+
+  // borrado logico: no se elimina, solo pasa a Activo / Inactivo
+  async function cambiarEstado(empleado) {
+    const nuevoEstado = empleado.usuario.estado === 'Activo' ? 'Inactivo' : 'Activo'
+    const accion = nuevoEstado === 'Inactivo' ? 'inactivar' : 'activar'
+    if (!window.confirm(`¿Seguro que deseas ${accion} a ${nombreCompleto(empleado)}?`)) {
+      return
+    }
+    setMensaje(null)
+    try {
+      await apiEmpleados.cambiarEstado(empleado.usuario.id, nuevoEstado)
+      setMensaje({ tipo: 'exito', texto: `Empleado ${nuevoEstado.toLowerCase()} correctamente.` })
+      await recargar()
     } catch (err) {
       setMensaje({ tipo: 'error', texto: err.message })
     }
@@ -74,8 +95,12 @@ function Empleados() {
     setMensaje(null)
     try {
       if (editandoId) {
-        await apiEmpleados.actualizar(editandoId, form)
-        setMensaje({ tipo: 'exito', texto: 'Empleado actualizado correctamente.' })
+        const actualizado = await apiEmpleados.actualizar(editandoId, form)
+        setMensaje(
+          actualizado.sinCambios
+            ? { tipo: 'info', texto: 'No había cambios para guardar.' }
+            : { tipo: 'exito', texto: 'Empleado actualizado correctamente.' },
+        )
       } else {
         await apiEmpleados.crear(form)
         setMensaje({ tipo: 'exito', texto: 'Empleado registrado correctamente.' })
@@ -126,8 +151,14 @@ function Empleados() {
               <input type="email" value={form.correo} onChange={(e) => cambiar('correo', e.target.value)} required />
             </label>
             <label className="campo">
-              Contraseña *
-              <input value={form.contrasena} onChange={(e) => cambiar('contrasena', e.target.value)} required />
+              {editandoId ? 'Contraseña (vacía = sin cambios)' : 'Contraseña *'}
+              <input
+                type="password"
+                value={form.contrasena}
+                onChange={(e) => cambiar('contrasena', e.target.value)}
+                required={!editandoId}
+                autoComplete="new-password"
+              />
             </label>
             <label className="campo">
               Teléfono
@@ -213,16 +244,37 @@ function Empleados() {
                     <td>{empleado.usuario.correo}</td>
                     <td>{empleado.cargo || '-'}</td>
                     <td className="numerico">{formatearMoneda(empleado.salarioBase)}</td>
-                    <td>{empleado.usuario.estado}</td>
+                    <td>
+                      <span
+                        className={`etiqueta ${
+                          empleado.usuario.estado === 'Activo' ? 'etiqueta-activo' : 'etiqueta-anulado'
+                        }`}
+                      >
+                        {empleado.usuario.estado}
+                      </span>
+                    </td>
                     <td>
                       {puedeEditar && (
-                        <button
-                          type="button"
-                          className="boton-secundario boton-mini"
-                          onClick={() => editar(empleado)}
-                        >
-                          Editar
-                        </button>
+                        <div className="tarjeta-acciones">
+                          <button
+                            type="button"
+                            className="boton-secundario boton-mini"
+                            onClick={() => editar(empleado)}
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            className={
+                              empleado.usuario.estado === 'Activo'
+                                ? 'boton-peligro boton-mini'
+                                : 'boton-secundario boton-mini'
+                            }
+                            onClick={() => cambiarEstado(empleado)}
+                          >
+                            {empleado.usuario.estado === 'Activo' ? 'Inactivar' : 'Activar'}
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>
