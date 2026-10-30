@@ -1,14 +1,6 @@
-// Dominio de la programacion diaria de horarios (CU04: Parametrizar Horarios y Plantillas de Turnos).
-// Funciones puras: reciben los datos ya leidos y no tocan la base de datos.
-// Las usan por igual la carga manual (PUT) y la importacion desde Excel.
-//
-// Cada dia programado es { fecha: "AAAA-MM-DD", horaEntrada: "HH:MM", horaSalida: "HH:MM", tipoTurno }.
-// Si la hora de salida es menor o igual que la de entrada, el turno termina al dia
-// siguiente (ej. Nocturno 22:00 -> 06:00).
 
 const horario = require("./horario");
 
-// Catalogo de tipos de turno. Coincide con el CHECK ck_horario_tipo de HORARIO_ASIGNADO.
 const TIPOS_TURNO = ["Diurno", "Vespertino", "Nocturno"];
 
 const FORMATO_HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -23,7 +15,6 @@ function horaValida(texto) {
     return FORMATO_HORA.test(String(texto || ""));
 }
 
-// "diurno" -> "Diurno"; devuelve null si no es un tipo del catalogo.
 function normalizarTipo(texto) {
     let buscado = String(texto || "").trim().toLowerCase();
     let tipo = TIPOS_TURNO.find(function (t) { return t.toLowerCase() === buscado; });
@@ -35,8 +26,6 @@ function aMinutos(hora) {
     return Number(partes[0]) * 60 + Number(partes[1]);
 }
 
-// Numero de dia absoluto de una fecha "AAAA-MM-DD", calculado en UTC para que
-// la zona horaria del servidor no mueva la fecha.
 function numeroDeDia(fecha) {
     let p = fecha.split("-").map(Number);
     return Date.UTC(p[0], p[1] - 1, p[2]) / 86400000;
@@ -46,7 +35,6 @@ function cruzaMedianoche(dia) {
     return aMinutos(dia.horaSalida) <= aMinutos(dia.horaEntrada);
 }
 
-// Intervalo del turno en minutos absolutos: [inicio, fin).
 function intervalo(dia) {
     let base = numeroDeDia(dia.fecha) * MINUTOS_DIA;
     let inicio = base + aMinutos(dia.horaEntrada);
@@ -54,14 +42,11 @@ function intervalo(dia) {
     return { inicio: inicio, fin: fin };
 }
 
-// Horas programadas del turno (ej. 22:00 -> 06:00 = 8). Sirve de base para CU06.
 function horasProgramadas(dia) {
     let i = intervalo(dia);
     return Math.round(((i.fin - i.inicio) / 60) * 100) / 100;
 }
 
-// true si dos turnos del mismo empleado se pisan. Que uno termine justo cuando
-// el otro empieza (ej. 06:00-14:00 y 14:00-22:00) NO es solapamiento.
 function seSolapan(a, b) {
     let x = intervalo(a);
     let y = intervalo(b);
@@ -72,7 +57,6 @@ function sumarDias(fecha, dias) {
     return horario.aTexto(new Date(horario.aFecha(fecha).getTime() + dias * 86400000 + 12 * 3600000));
 }
 
-// Fecha de hoy "AAAA-MM-DD" segun el reloj local del servidor.
 function hoyTexto() {
     return horario.aTexto(new Date());
 }
@@ -81,9 +65,6 @@ function textoTurno(dia) {
     return dia.tipoTurno + " " + dia.horaEntrada + "-" + dia.horaSalida + " del " + dia.fecha;
 }
 
-// Valida un dia. Devuelve { dia, errores }:
-//   dia     -> el dia normalizado (tipoTurno con mayuscula inicial, textos sin espacios) o null
-//   errores -> [{ campo, mensaje }]
 function validarDia(datos, hoy) {
     let errores = [];
     let fecha = estaVacio(datos.fecha) ? "" : String(datos.fecha).trim();
@@ -134,11 +115,6 @@ function validarDia(datos, hoy) {
     };
 }
 
-// Busca solapamientos de un mismo empleado.
-//   nuevos     -> dias que se quieren guardar (cada uno con una "ref" para ubicar el error)
-//   existentes -> dias ya guardados en la base
-// Un dia nuevo REEMPLAZA al dia guardado con la misma fecha, asi que ese dia guardado no se compara.
-// Devuelve [{ ref, fecha, mensaje }].
 function buscarSolapamientos(nuevos, existentes) {
     let conflictos = [];
     let fechasNuevas = {};
@@ -169,8 +145,101 @@ function buscarSolapamientos(nuevos, existentes) {
     return conflictos;
 }
 
+const FIN_INDEFINIDO = "9999-12-31";
+
+function finDeRango(fechaHasta) {
+    return estaVacio(fechaHasta) ? FIN_INDEFINIDO : fechaHasta;
+}
+
+function diaDespuesDelFin(fin) {
+    return fin === FIN_INDEFINIDO ? fin : sumarDias(fin, 1);
+}
+
+function aplicaEn(asignacion, fecha) {
+    return fecha >= asignacion.fechaDesde && fecha <= finDeRango(asignacion.fechaHasta) &&
+        horario.turnoCubreDia(asignacion, horario.aFecha(fecha));
+}
+
+function ocurrenciasDeAsignacion(asignacion, desde, hasta) {
+    let ocurrencias = [];
+
+    for (let fecha = desde; fecha <= hasta; fecha = sumarDias(fecha, 1)) {
+        if (aplicaEn(asignacion, fecha)) {
+            ocurrencias.push({ fecha: fecha, horaEntrada: asignacion.horaEntrada, horaSalida: asignacion.horaSalida });
+        }
+    }
+    return ocurrencias;
+}
+
+function primeraFechaEnComun(a, b) {
+    let inicio = a.fechaDesde > b.fechaDesde ? a.fechaDesde : b.fechaDesde;
+    let fin = finDeRango(a.fechaHasta) < finDeRango(b.fechaHasta) ? finDeRango(a.fechaHasta) : finDeRango(b.fechaHasta);
+    let limite = sumarDias(inicio, 6);
+    let hasta = fin < limite ? fin : limite;
+
+    for (let fecha = inicio; fecha <= hasta; fecha = sumarDias(fecha, 1)) {
+        if (aplicaEn(a, fecha) && aplicaEn(b, fecha)) {
+            return fecha;
+        }
+    }
+    return null;
+}
+
+function asignacionesSeSolapan(a, b) {
+    let inicio = a.fechaDesde > b.fechaDesde ? a.fechaDesde : b.fechaDesde;
+    let fin = finDeRango(a.fechaHasta) < finDeRango(b.fechaHasta) ? finDeRango(a.fechaHasta) : finDeRango(b.fechaHasta);
+    if (inicio > diaDespuesDelFin(fin)) {
+        return false;
+    }
+
+    let desde = sumarDias(inicio, -1);
+    let limite = sumarDias(inicio, 14);
+    let hasta = diaDespuesDelFin(fin) < limite ? diaDespuesDelFin(fin) : limite;
+
+    let delA = ocurrenciasDeAsignacion(a, desde, hasta);
+    let delB = ocurrenciasDeAsignacion(b, desde, hasta);
+
+    return delA.some(function (x) {
+        return delB.some(function (y) { return seSolapan(x, y); });
+    });
+}
+
+function buscarConflictoAsignacion(asignaciones, nueva) {
+    let nuevaEsEspecial = horario.esEspecial(nueva);
+
+    for (let i = 0; i < asignaciones.length; i++) {
+        let a = asignaciones[i];
+        if (horario.esDiaLibre(a)) {
+            continue;
+        }
+        let existente = {
+            fechaDesde: a.fechaDesde,
+            fechaHasta: a.fechaHasta,
+            dias: a.turno.dias,
+            horaEntrada: a.turno.horaEntrada,
+            horaSalida: a.turno.horaSalida
+        };
+
+        if (horario.esEspecial(existente) !== nuevaEsEspecial) {
+            continue;
+        }
+        if (nuevaEsEspecial) {
+            let fecha = primeraFechaEnComun(existente, nueva);
+            if (fecha !== null) {
+                return { asignacion: a, fecha: fecha };
+            }
+        }
+        if (asignacionesSeSolapan(existente, nueva)) {
+            return { asignacion: a, fecha: null };
+        }
+    }
+    return null;
+}
+
 module.exports = {
     TIPOS_TURNO: TIPOS_TURNO,
+    asignacionesSeSolapan: asignacionesSeSolapan,
+    buscarConflictoAsignacion: buscarConflictoAsignacion,
     horaValida: horaValida,
     normalizarTipo: normalizarTipo,
     cruzaMedianoche: cruzaMedianoche,
