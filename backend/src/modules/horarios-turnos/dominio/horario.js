@@ -60,16 +60,50 @@ function asignacionCubreFecha(asignacion, fechaTexto) {
     return true;
 }
 
-// Devuelve el turno vigente para esa fecha o null si no hay ninguno.
+// Una asignacion con fecha "hasta" es un turno especial (temporal): mientras dura, reemplaza
+// al horario base del empleado, que es la asignacion sin fecha final. Al pasar la fecha
+// "hasta" el especial deja de aplicar y el base vuelve a verse solo.
+function esEspecial(asignacion) {
+    return !esDiaLibre(asignacion) &&
+        asignacion.fechaHasta !== null && asignacion.fechaHasta !== undefined && asignacion.fechaHasta !== "";
+}
+
+// Un "dia libre" quita el turno base de UN solo dia (desde = hasta). Se guarda como una asignacion
+// de ese dia con estado "Descanso", asi no hace falta tocar la estructura de la tabla.
+function esDiaLibre(asignacion) {
+    return asignacion.estado === "Descanso";
+}
+
+// true si la asignacion aplica en esa fecha: esta vigente y su turno cubre ese dia de la semana.
+function asignacionAplicaEn(asignacion, fechaTexto) {
+    return asignacionCubreFecha(asignacion, fechaTexto) &&
+        turnoCubreDia(asignacion.turno, aFecha(fechaTexto));
+}
+
+// Devuelve el turno vigente para esa fecha (con el id y el tipo de la asignacion que lo aplica)
+// o null si no hay ninguno. Si coinciden un especial y el base, gana el especial.
+// Un dia libre anula el turno base de ese dia, pero no un turno especial.
 function turnoDeFecha(asignaciones, fechaTexto) {
-    let fecha = aFecha(fechaTexto);
+    let elegida = null;
+    let hayDiaLibre = false;
     for (let i = 0; i < asignaciones.length; i++) {
         let a = asignaciones[i];
-        if (asignacionCubreFecha(a, fechaTexto) && turnoCubreDia(a.turno, fecha)) {
-            return a.turno;
+        if (!asignacionAplicaEn(a, fechaTexto)) {
+            continue;
+        }
+        if (esDiaLibre(a)) {
+            hayDiaLibre = true;
+        } else if (elegida === null || (esEspecial(a) && !esEspecial(elegida))) {
+            elegida = a;
         }
     }
-    return null;
+    if (elegida === null || (hayDiaLibre && !esEspecial(elegida))) {
+        return null;
+    }
+    return Object.assign({}, elegida.turno, {
+        asignacionId: elegida.id,
+        tipoAsignacion: esEspecial(elegida) ? "Especial" : "Base"
+    });
 }
 
 // Grilla de 7 dias (lunes a domingo) con el turno que aplica a cada uno.
@@ -99,60 +133,10 @@ function fechaExiste(texto) {
     return aTexto(aFecha(texto)) === texto;
 }
 
-// Fecha hasta vacia = indefinida. Se compara como un valor muy lejano.
-const FIN_INDEFINIDO = "9999-12-31";
-
-function finDeRango(fechaHasta) {
-    return fechaHasta === null || fechaHasta === undefined || fechaHasta === "" ? FIN_INDEFINIDO : fechaHasta;
-}
-
-// true si dos asignaciones ponen al empleado en dos turnos el mismo dia:
-// sus fechas se cruzan y, dentro del cruce, cae un dia de la semana que ambos turnos cubren.
-// Cada asignacion es { fechaDesde, fechaHasta, dias } con dias = "1,2,3,4,5".
-// Ej: Diurno (1-5) y Fin de semana (6,7) en las mismas fechas NO se solapan.
-function asignacionesSeSolapan(a, b) {
-    let inicio = a.fechaDesde > b.fechaDesde ? a.fechaDesde : b.fechaDesde;
-    let finA = finDeRango(a.fechaHasta);
-    let finB = finDeRango(b.fechaHasta);
-    let fin = finA < finB ? finA : finB;
-    if (inicio > fin) {
-        return false; // las fechas no se cruzan
-    }
-
-    let diasB = listaDias(b.dias);
-    let comunes = listaDias(a.dias).filter(function (d) { return diasB.indexOf(d) !== -1; });
-    if (comunes.length === 0) {
-        return false; // los turnos no comparten dias de la semana
-    }
-
-    // basta con revisar los primeros 7 dias del cruce: ahi aparece cada dia de la semana
-    let fecha = aFecha(inicio);
-    for (let i = 0; i < 7 && aTexto(fecha) <= fin; i++) {
-        if (comunes.indexOf(diaIso(fecha)) !== -1) {
-            return true;
-        }
-        fecha = sumarDias(fecha, 1);
-    }
-    return false;
-}
-
-// Devuelve la primera asignacion existente (con su turno) que se solapa con la nueva, o null.
-// nueva = { fechaDesde, fechaHasta, dias }
-function buscarConflicto(asignaciones, nueva) {
-    for (let i = 0; i < asignaciones.length; i++) {
-        let a = asignaciones[i];
-        let existente = { fechaDesde: a.fechaDesde, fechaHasta: a.fechaHasta, dias: a.turno.dias };
-        if (asignacionesSeSolapan(existente, nueva)) {
-            return a;
-        }
-    }
-    return null;
-}
+// La deteccion de choques entre asignaciones (necesita las horas) esta en programacion.js.
 
 module.exports = {
     fechaExiste: fechaExiste,
-    asignacionesSeSolapan: asignacionesSeSolapan,
-    buscarConflicto: buscarConflicto,
     NOMBRES_DIA: NOMBRES_DIA,
     listaDias: listaDias,
     aFecha: aFecha,
@@ -160,6 +144,9 @@ module.exports = {
     inicioSemana: inicioSemana,
     turnoCubreDia: turnoCubreDia,
     asignacionCubreFecha: asignacionCubreFecha,
+    asignacionAplicaEn: asignacionAplicaEn,
+    esEspecial: esEspecial,
+    esDiaLibre: esDiaLibre,
     turnoDeFecha: turnoDeFecha,
     construirSemana: construirSemana
 };

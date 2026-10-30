@@ -70,6 +70,48 @@ router.post("/asignaciones", autorizar("Administrador"), async (req, res) => {
     }
 });
 
+// DELETE /api/horarios/asignaciones/:id -> desactiva la asignacion (queda en el historial)
+router.delete("/asignaciones/:id", autorizar("Administrador"), async (req, res) => {
+    try {
+        const resultado = await controlador.desactivarAsignacion(req.params.id);
+        if (resultado.exito) {
+            res.json({ mensaje: resultado.mensaje });
+        } else {
+            res.status(resultado.noEncontrado ? 404 : 400).json({ error: resultado.mensaje });
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// PUT /api/horarios/asignaciones/:id/reactivar -> vuelve a activar una asignacion desactivada
+router.put("/asignaciones/:id/reactivar", autorizar("Administrador"), async (req, res) => {
+    try {
+        const resultado = await controlador.reactivarAsignacion(req.params.id);
+        if (resultado.exito) {
+            res.json({ mensaje: resultado.mensaje });
+        } else {
+            res.status(resultado.noEncontrado ? 404 : 400).json({ error: resultado.mensaje });
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// DELETE /api/horarios/base/:empleadoId/:fecha -> quita el turno base de UN solo dia
+router.delete("/base/:empleadoId/:fecha", autorizar("Administrador"), async (req, res) => {
+    try {
+        const resultado = await controlador.quitarDiaBase(req.params.empleadoId, req.params.fecha);
+        if (resultado.exito) {
+            res.json({ mensaje: resultado.mensaje });
+        } else {
+            res.status(resultado.noEncontrado ? 404 : 400).json({ error: resultado.mensaje });
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // GET /api/horarios/empleado/:id -> horarios asignados a un empleado
 router.get("/empleado/:id", autorizarPropio(...GESTION), async (req, res) => {
     try {

@@ -51,6 +51,10 @@ async function registrarTurno(datos) {
         return { exito: false, mensaje: "ERROR: la hora de salida debe ser HH:MM (ej: 17:00)." };
     }
 
+    if (datos.horaEntrada === datos.horaSalida) {
+        return { exito: false, mensaje: "ERROR: la hora de salida no puede ser igual a la hora de entrada." };
+    }
+
     let dias = normalizarDias(datos.dias);
     if (dias === null) {
         return { exito: false, mensaje: "ERROR: los días deben ser números del 1 (lunes) al 7 (domingo)." };
@@ -72,6 +76,46 @@ async function registrarTurno(datos) {
         mensaje: "Turno \"" + nombre + "\" creado con id " + guardado.id + ".",
         datos: guardado
     };
+}
+
+// -------------------- choques de horario --------------------
+// Revisa si aplicar "turno" al empleado entre fechaDesde y fechaHasta (null = sin fecha final)
+// choca con lo que ya tiene. Devuelve el mensaje de error o null si no hay choque.
+// ignorarId = asignacion que no debe contarse (la que se esta reactivando).
+async function mensajeDeChoque(empleadoId, turno, fechaDesde, fechaHasta, ignorarId) {
+    let existentes = (await repositorio.obtenerAsignacionesPorEmpleado(empleadoId))
+        .filter(function (a) { return a.id !== ignorarId; });
+    let conflicto = programacion.buscarConflictoAsignacion(existentes, {
+        fechaDesde: fechaDesde, fechaHasta: fechaHasta, dias: turno.dias,
+        horaEntrada: turno.horaEntrada, horaSalida: turno.horaSalida
+    });
+    if (conflicto !== null) {
+        let otro = conflicto.asignacion;
+        let descripcionOtro = "el turno \"" + otro.turno.nombre + "\" (" + otro.turno.horaEntrada + "-" +
+            otro.turno.horaSalida + ") que el empleado ya tiene entre " + otro.fechaDesde + " y " +
+            (otro.fechaHasta || "indefinido");
+
+        if (conflicto.fecha !== null) {
+            return "ERROR: la fecha " + conflicto.fecha + " ya tiene un horario asignado: " + descripcionOtro + ".";
+        }
+        return "ERROR: el turno \"" + turno.nombre + "\" (" + turno.horaEntrada + "-" + turno.horaSalida +
+            ") se cruza en horario con " + descripcionOtro + "." +
+            (fechaHasta === null ? " Si es un turno temporal, indica la fecha \"Hasta\"." : "");
+    }
+
+    // Un turno especial tampoco puede caer en un dia que ya tiene turno de programacion diaria.
+    if (fechaHasta !== null) {
+        let programados = await repositorioProgramacion.obtenerPorEmpleadoEntre(empleadoId, fechaDesde, fechaHasta);
+        let ocupado = programados.find(function (d) {
+            return horario.turnoCubreDia(turno, horario.aFecha(d.fecha));
+        });
+        if (ocupado !== undefined) {
+            return "ERROR: la fecha " + ocupado.fecha + " ya tiene un horario asignado: programación diaria " +
+                ocupado.tipoTurno + " " + ocupado.horaEntrada + "-" + ocupado.horaSalida + ".";
+        }
+    }
+
+    return null;
 }
 
 // -------------------- asignar turno a un empleado --------------------
@@ -111,16 +155,9 @@ async function asignarHorario(datos) {
         fechaHasta = datos.fechaHasta;
     }
 
-    let existentes = await repositorio.obtenerAsignacionesPorEmpleado(empleadoId);
-    let conflicto = horario.buscarConflicto(existentes,
-        { fechaDesde: datos.fechaDesde, fechaHasta: fechaHasta, dias: turno.dias });
-    if (conflicto !== null) {
-        return {
-            exito: false,
-            mensaje: "ERROR: el empleado ya tiene el turno \"" + conflicto.turno.nombre + "\" entre " +
-                conflicto.fechaDesde + " y " + (conflicto.fechaHasta || "indefinido") +
-                ", que coincide en días con este rango."
-        };
+    let choque = await mensajeDeChoque(empleadoId, turno, datos.fechaDesde, fechaHasta);
+    if (choque !== null) {
+        return { exito: false, mensaje: choque };
     }
 
     let guardada = await repositorio.agregarAsignacion({
@@ -132,16 +169,108 @@ async function asignarHorario(datos) {
 
     return {
         exito: true,
-        mensaje: "Horario asignado al empleado " + empleadoId + " (asignación " + guardada.id + ").",
+        mensaje: "Horario asignado al empleado " + empleadoId + " (asignación " + guardada.id + ")." +
+            (fechaHasta === null ? "" :
+                " Es un turno especial: reemplaza su horario base del " + datos.fechaDesde + " al " + fechaHasta +
+                " y después el horario base vuelve a aplicarse solo."),
         datos: guardada
     };
 }
 
 // -------------------- visualizacion --------------------
 
-// Todas las asignaciones (turnos) de un empleado.
+// Todas las asignaciones (turnos) de un empleado, activas y desactivadas.
 function horarioDeEmpleado(empleadoId) {
-    return repositorio.obtenerAsignacionesPorEmpleado(empleadoId);
+    return repositorio.obtenerAsignacionesPorEmpleado(empleadoId, true);
+}
+
+// -------------------- desactivar una asignacion --------------------
+// La asignacion deja de aplicarse (calendario y choques) pero queda en el historial.
+async function desactivarAsignacion(asignacionId) {
+    let id = Number(asignacionId);
+    if (!Number.isInteger(id) || id <= 0) {
+        return { exito: false, mensaje: "ERROR: el id de la asignación es inválido." };
+    }
+
+    let asignacion = await repositorio.buscarAsignacionPorId(id);
+    if (asignacion === null) {
+        return { exito: false, noEncontrado: true, mensaje: "ERROR: no existe una asignación con el id " + id + "." };
+    }
+
+    // Un dia libre no se "desactiva": se borra y el turno base de ese dia vuelve.
+    if (asignacion.estado === "Descanso") {
+        await repositorio.eliminarDiaLibre(id);
+        return { exito: true, mensaje: "Se restauró el turno base del " + asignacion.fechaDesde + "." };
+    }
+
+    if (asignacion.estado !== "Activo" || !await repositorio.desactivarAsignacion(id)) {
+        return { exito: false, mensaje: "ERROR: la asignación " + id + " ya está desactivada." };
+    }
+    return {
+        exito: true,
+        mensaje: "Se desactivó el turno \"" + asignacion.turno.nombre + "\" (" + asignacion.fechaDesde +
+            " a " + (asignacion.fechaHasta || "sin fecha final") + ")."
+    };
+}
+
+// -------------------- reactivar una asignacion desactivada --------------------
+// Vuelve a aplicarla solo si ahora no choca con lo que el empleado tiene.
+async function reactivarAsignacion(asignacionId) {
+    let id = Number(asignacionId);
+    if (!Number.isInteger(id) || id <= 0) {
+        return { exito: false, mensaje: "ERROR: el id de la asignación es inválido." };
+    }
+
+    let asignacion = await repositorio.buscarAsignacionPorId(id);
+    if (asignacion === null) {
+        return { exito: false, noEncontrado: true, mensaje: "ERROR: no existe una asignación con el id " + id + "." };
+    }
+    if (asignacion.estado !== "Inactivo") {
+        return { exito: false, mensaje: "ERROR: la asignación " + id + " ya está activa." };
+    }
+
+    let choque = await mensajeDeChoque(asignacion.empleadoId, asignacion.turno, asignacion.fechaDesde,
+        asignacion.fechaHasta === undefined ? null : asignacion.fechaHasta, id);
+    if (choque !== null) {
+        return { exito: false, mensaje: choque };
+    }
+
+    if (!await repositorio.activarAsignacion(id)) {
+        return { exito: false, mensaje: "ERROR: la asignación " + id + " ya está activa." };
+    }
+    return {
+        exito: true,
+        mensaje: "Se reactivó el turno \"" + asignacion.turno.nombre + "\" (" + asignacion.fechaDesde +
+            " a " + (asignacion.fechaHasta || "sin fecha final") + ")."
+    };
+}
+
+// -------------------- quitar el turno base de UN dia --------------------
+// No toca el resto del horario base: solo ese dia queda sin turno (un dia libre).
+async function quitarDiaBase(empleadoId, fecha) {
+    let id = Number(empleadoId);
+    if (!Number.isInteger(id) || id <= 0) {
+        return { exito: false, mensaje: "ERROR: el id del empleado es inválido." };
+    }
+    if (!horario.fechaExiste(fecha)) {
+        return { exito: false, mensaje: "ERROR: la fecha debe ser válida (AAAA-MM-DD)." };
+    }
+    if (await repositorioEmpleados.buscarEmpleadoPorId(id) === null) {
+        return { exito: false, noEncontrado: true, mensaje: "ERROR: no existe un empleado con ese id." };
+    }
+
+    let asignaciones = await repositorio.obtenerAsignacionesPorEmpleado(id);
+    let turno = horario.turnoDeFecha(asignaciones, fecha);
+    if (turno === null) {
+        return { exito: false, noEncontrado: true, mensaje: "ERROR: el empleado no tiene horario base el " + fecha + "." };
+    }
+    if (turno.tipoAsignacion === "Especial") {
+        return { exito: false, mensaje: "ERROR: el " + fecha + " lo cubre un turno especial, no el horario base." };
+    }
+
+    let base = asignaciones.find(function (a) { return a.id === turno.asignacionId; });
+    await repositorio.agregarDiaLibre({ empleadoId: id, turnoId: base.turnoId, fecha: fecha });
+    return { exito: true, mensaje: "Se quitó el turno base del " + fecha + ". Los demás días no cambian." };
 }
 
 // Calendario operativo: el turno programado para un dia exacto (CU04, tabla
@@ -204,6 +333,9 @@ module.exports = {
     registrarTurno: registrarTurno,
     asignarHorario: asignarHorario,
     horarioDeEmpleado: horarioDeEmpleado,
+    desactivarAsignacion: desactivarAsignacion,
+    reactivarAsignacion: reactivarAsignacion,
+    quitarDiaBase: quitarDiaBase,
     horarioDeHoy: horarioDeHoy,
     semanaDeEmpleado: semanaDeEmpleado
 };
