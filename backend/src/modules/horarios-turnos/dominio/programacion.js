@@ -169,8 +169,126 @@ function buscarSolapamientos(nuevos, existentes) {
     return conflictos;
 }
 
+// ---------------- plantillas semanales (TURNO + ASIGNACION_HORARIO) ----------------
+// Una asignacion aplica un turno (horas + dias de la semana) en un rango de fechas.
+// Dos asignaciones del mismo empleado chocan solo si, en alguna fecha concreta, sus
+// horas se pisan: no basta con que compartan dias de la semana ni con que sus rangos
+// de fechas se crucen. Cada asignacion es
+// { fechaDesde, fechaHasta, dias: "1,2,3", horaEntrada, horaSalida }.
+
+// Fecha hasta vacia = vigente indefinidamente.
+const FIN_INDEFINIDO = "9999-12-31";
+
+function finDeRango(fechaHasta) {
+    return estaVacio(fechaHasta) ? FIN_INDEFINIDO : fechaHasta;
+}
+
+// El dia siguiente a una fecha de fin; el fin indefinido no se mueve.
+function diaDespuesDelFin(fin) {
+    return fin === FIN_INDEFINIDO ? fin : sumarDias(fin, 1);
+}
+
+// true si la asignacion esta vigente en esa fecha y su turno cubre ese dia de la semana.
+function aplicaEn(asignacion, fecha) {
+    return fecha >= asignacion.fechaDesde && fecha <= finDeRango(asignacion.fechaHasta) &&
+        horario.turnoCubreDia(asignacion, horario.aFecha(fecha));
+}
+
+// Turnos concretos (uno por fecha) que genera la asignacion entre "desde" y "hasta".
+function ocurrenciasDeAsignacion(asignacion, desde, hasta) {
+    let ocurrencias = [];
+
+    for (let fecha = desde; fecha <= hasta; fecha = sumarDias(fecha, 1)) {
+        if (aplicaEn(asignacion, fecha)) {
+            ocurrencias.push({ fecha: fecha, horaEntrada: asignacion.horaEntrada, horaSalida: asignacion.horaSalida });
+        }
+    }
+    return ocurrencias;
+}
+
+// Primera fecha en que las dos asignaciones aplican a la vez (mismo dia), o null.
+// El patron semanal se repite, asi que si existe esa fecha aparece en los primeros 7 dias del cruce.
+function primeraFechaEnComun(a, b) {
+    let inicio = a.fechaDesde > b.fechaDesde ? a.fechaDesde : b.fechaDesde;
+    let fin = finDeRango(a.fechaHasta) < finDeRango(b.fechaHasta) ? finDeRango(a.fechaHasta) : finDeRango(b.fechaHasta);
+    let limite = sumarDias(inicio, 6);
+    let hasta = fin < limite ? fin : limite;
+
+    for (let fecha = inicio; fecha <= hasta; fecha = sumarDias(fecha, 1)) {
+        if (aplicaEn(a, fecha) && aplicaEn(b, fecha)) {
+            return fecha;
+        }
+    }
+    return null;
+}
+
+// true si en alguna fecha concreta los dos turnos se pisan (los nocturnos invaden el dia siguiente).
+function asignacionesSeSolapan(a, b) {
+    let inicio = a.fechaDesde > b.fechaDesde ? a.fechaDesde : b.fechaDesde;
+    let fin = finDeRango(a.fechaHasta) < finDeRango(b.fechaHasta) ? finDeRango(a.fechaHasta) : finDeRango(b.fechaHasta);
+    // Rangos contiguos (uno termina el dia que el otro empieza) tambien se revisan:
+    // un turno nocturno del ultimo dia invade el primero del siguiente rango.
+    if (inicio > diaDespuesDelFin(fin)) {
+        return false; // los rangos de fechas no se tocan
+    }
+
+    // El patron semanal se repite: basta con revisar dos semanas del cruce, mas un dia a cada
+    // lado porque un turno nocturno del dia anterior (o posterior) puede invadir el cruce.
+    let desde = sumarDias(inicio, -1);
+    let limite = sumarDias(inicio, 14);
+    let hasta = diaDespuesDelFin(fin) < limite ? diaDespuesDelFin(fin) : limite;
+
+    let delA = ocurrenciasDeAsignacion(a, desde, hasta);
+    let delB = ocurrenciasDeAsignacion(b, desde, hasta);
+
+    return delA.some(function (x) {
+        return delB.some(function (y) { return seSolapan(x, y); });
+    });
+}
+
+// Devuelve el primer choque de la nueva asignacion con las existentes, o null:
+//   { asignacion, fecha }  fecha = dia en que ambas aplican, o null si el choque es solo de horas.
+// Reglas (el horario base es la asignacion sin "hasta"; el especial, la que tiene "hasta"):
+//   - un especial puede cruzarse con el base: lo reemplaza mientras dura;
+//   - dos especiales no pueden aplicar el mismo dia ni pisarse en horas;
+//   - dos horarios base no pueden pisarse en horas.
+// nueva = { fechaDesde, fechaHasta, dias, horaEntrada, horaSalida }
+function buscarConflictoAsignacion(asignaciones, nueva) {
+    let nuevaEsEspecial = horario.esEspecial(nueva);
+
+    for (let i = 0; i < asignaciones.length; i++) {
+        let a = asignaciones[i];
+        if (horario.esDiaLibre(a)) {
+            continue; // un dia libre no ocupa horario
+        }
+        let existente = {
+            fechaDesde: a.fechaDesde,
+            fechaHasta: a.fechaHasta,
+            dias: a.turno.dias,
+            horaEntrada: a.turno.horaEntrada,
+            horaSalida: a.turno.horaSalida
+        };
+
+        if (horario.esEspecial(existente) !== nuevaEsEspecial) {
+            continue; // un especial y el base conviven
+        }
+        if (nuevaEsEspecial) {
+            let fecha = primeraFechaEnComun(existente, nueva);
+            if (fecha !== null) {
+                return { asignacion: a, fecha: fecha };
+            }
+        }
+        if (asignacionesSeSolapan(existente, nueva)) {
+            return { asignacion: a, fecha: null };
+        }
+    }
+    return null;
+}
+
 module.exports = {
     TIPOS_TURNO: TIPOS_TURNO,
+    asignacionesSeSolapan: asignacionesSeSolapan,
+    buscarConflictoAsignacion: buscarConflictoAsignacion,
     horaValida: horaValida,
     normalizarTipo: normalizarTipo,
     cruzaMedianoche: cruzaMedianoche,
