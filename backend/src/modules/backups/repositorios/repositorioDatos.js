@@ -8,6 +8,7 @@ const TABLAS_RESPALDO = [
     { nombre: "TURNO", pk: "ID_TURNO" },
     { nombre: "ASIGNACION_HORARIO", pk: "ID_ASIGNACION" },
     { nombre: "HORARIO_ASIGNADO", pk: "ID_HORARIO" },
+    { nombre: "SOLICITUD_RELEVO", pk: "ID_SOLICITUD" },
     { nombre: "ASISTENCIA", pk: "ID_ASISTENCIA" },
     { nombre: "HORA_EXTRA", pk: "ID_HORA_EXTRA" },
     { nombre: "NOMINA", pk: "ID_NOMINA" }

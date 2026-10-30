@@ -84,3 +84,13 @@ export const apiReportes = {
       })
       .then((r) => r.data),
 }
+
+export const apiBackups = {
+  estado: () => cliente.get('/backups').then((r) => r.data),
+  crear: () => cliente.post('/backups').then((r) => r.data),
+  descargarJson: (id) =>
+    cliente.get(`/backups/${id}/descarga`, { responseType: 'blob' }).then((r) => r.data),
+  descargarExcel: (id) =>
+    cliente.get(`/backups/${id}/excel`, { responseType: 'blob' }).then((r) => r.data),
+  comparar: (id) => cliente.get(`/backups/${id}/comparacion`).then((r) => r.data),
+}

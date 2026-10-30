@@ -75,7 +75,8 @@ async function hayDatos() {
 async function verificar() {
     let tablas = [
         "EMPLEADO", "CONTACTO_EMERGENCIA", "TURNO", "ASIGNACION_HORARIO",
-        "HORARIO_ASIGNADO", "ASISTENCIA", "HORA_EXTRA", "NOMINA", "BACKUP_HISTORIAL"
+        "HORARIO_ASIGNADO", "SOLICITUD_RELEVO", "ASISTENCIA", "HORA_EXTRA", "NOMINA",
+        "BACKUP_HISTORIAL"
     ];
     console.log("\nConteo de filas:");
     for (let i = 0; i < tablas.length; i++) {
