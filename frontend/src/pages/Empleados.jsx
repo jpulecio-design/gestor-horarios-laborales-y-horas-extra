@@ -267,7 +267,7 @@ function Empleados() {
                             type="button"
                             className={
                               empleado.usuario.estado === 'Activo'
-                                ? 'boton-peligro boton-mini'
+                                ? 'boton-secundario boton-peligro-contorno boton-mini'
                                 : 'boton-secundario boton-mini'
                             }
                             onClick={() => cambiarEstado(empleado)}

@@ -130,6 +130,18 @@
   color: var(--accent-hover);
 }
 
+.boton-peligro-contorno {
+  background: transparent;
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.boton-peligro-contorno:hover {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #b91c1c;
+}
+
 .boton-peligro {
   background: var(--danger);
   border-color: var(--danger);
