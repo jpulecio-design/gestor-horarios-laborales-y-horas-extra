@@ -3,8 +3,12 @@ import cliente from './cliente'
 export const apiAuth = {
   iniciarSesion: (username, password) =>
     cliente.post('/auth/login', { username, password }).then((r) => r.data),
-  cambiarContrasena: (contrasenaActual, contrasenaNueva) =>
-    cliente.post('/auth/cambiar-contrasena', { contrasenaActual, contrasenaNueva }).then((r) => r.data),
+  solicitarRecuperacion: (correo) =>
+    cliente.post('/auth/recuperar-contrasena', { correo }).then((r) => r.data),
+  restablecerContrasena: (correo, codigo, contrasenaNueva) =>
+    cliente
+      .post('/auth/restablecer-contrasena', { correo, codigo, contrasenaNueva })
+      .then((r) => r.data),
 }
 
 export const apiTest = {

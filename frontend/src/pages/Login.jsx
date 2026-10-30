@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
 import './Login.css'
 
@@ -39,7 +39,7 @@ function Login() {
         <label>
           Usuario
           <input
-            type="text"
+            type="email"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
@@ -60,6 +60,9 @@ function Login() {
         <button type="submit" disabled={enviando}>
           {enviando ? 'Ingresando...' : 'Entrar'}
         </button>
+        <Link className="login-enlace" to="/recuperar-contrasena">
+          ¿Olvidaste tu contraseña?
+        </Link>
       </form>
     </div>
   )

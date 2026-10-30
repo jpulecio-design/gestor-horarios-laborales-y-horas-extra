@@ -40,3 +40,9 @@
   font-size: 14px;
   margin: 0;
 }
+
+.login-enlace {
+  color: var(--primary);
+  font-size: 14px;
+  text-align: center;
+}

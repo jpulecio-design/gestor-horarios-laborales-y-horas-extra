@@ -49,6 +49,21 @@ CREATE TABLE EMPLEADO (
 
 CREATE INDEX ix_empleado_rol ON EMPLEADO (rol);
 
+-- ------------------------------------------------------------
+-- RECUPERACIÓN DE CONTRASEÑA
+-- Guarda solo el hash del código temporal; permite un código activo
+-- por empleado, con expiración e intentos limitados.
+-- ------------------------------------------------------------
+CREATE TABLE RECUPERACION_CONTRASENA (
+    id_empleado   NUMBER NOT NULL,
+    codigo_hash   VARCHAR2(64) NOT NULL,
+    expira_en     TIMESTAMP NOT NULL,
+    intentos      NUMBER DEFAULT 0 NOT NULL,
+    CONSTRAINT pk_recuperacion_contrasena PRIMARY KEY (id_empleado),
+    CONSTRAINT fk_recuperacion_empleado FOREIGN KEY (id_empleado)
+        REFERENCES EMPLEADO (id_empleado) ON DELETE CASCADE
+);
+
 
 -- ------------------------------------------------------------
 -- CONTACTO DE EMERGENCIA

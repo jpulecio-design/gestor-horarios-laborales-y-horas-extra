@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
 import RutaProtegida from './components/RutaProtegida'
 import Login from './pages/Login'
+import RecuperarContrasena from './pages/RecuperarContrasena'
 import Inicio from './pages/Inicio'
 import Empleados from './pages/Empleados'
 import Horarios from './pages/Horarios'
@@ -19,6 +20,7 @@ function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/recuperar-contrasena" element={<RecuperarContrasena />} />
 
       <Route element={<RutaProtegida />}>
         <Route element={<Layout />}>
