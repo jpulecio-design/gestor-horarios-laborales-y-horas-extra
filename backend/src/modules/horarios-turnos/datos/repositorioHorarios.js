@@ -1,7 +1,5 @@
 const database = require("../../../config/database");
 
-// ===================== TURNOS =====================
-
 const COLUMNAS_TURNO =
     "id_turno, nombre, hora_entrada, hora_salida, dias, estado, " +
     "TO_CHAR(fecha_creacion, 'YYYY-MM-DD HH24:MI') AS fecha_creacion";
@@ -18,7 +16,6 @@ function turnoDesdeFila(fila) {
     };
 }
 
-// Inserta un turno y devuelve la fila guardada (con su id de Oracle).
 function agregarTurno(datos) {
     let sql =
         "INSERT INTO TURNO (nombre, hora_entrada, hora_salida, dias) " +
@@ -60,7 +57,6 @@ function buscarTurnoPorId(id) {
         });
 }
 
-// true si ya existe un turno con ese nombre
 function existeNombreTurno(nombre) {
     let sql = "SELECT COUNT(*) AS total FROM TURNO WHERE nombre = :nombre";
 
@@ -69,8 +65,6 @@ function existeNombreTurno(nombre) {
             return resultado.rows[0].TOTAL > 0;
         });
 }
-
-// ===================== ASIGNACIONES =====================
 
 const COLUMNAS_ASIGNACION =
     "a.id_asignacion, a.id_empleado, a.id_turno, " +
@@ -96,7 +90,6 @@ function asignacionDesdeFila(fila) {
     };
 }
 
-// Asigna un turno a un empleado y devuelve la asignacion guardada.
 function agregarAsignacion(datos) {
     let sql =
         "INSERT INTO ASIGNACION_HORARIO (id_empleado, id_turno, fecha_desde, fecha_hasta) " +
@@ -133,17 +126,69 @@ function buscarAsignacionPorId(id) {
         });
 }
 
-// devuelve una promesa con las asignaciones (con su turno) de un empleado
-function obtenerAsignacionesPorEmpleado(empleadoId) {
+function obtenerAsignacionesPorEmpleado(empleadoId, incluirInactivas) {
     let sql =
         "SELECT " + COLUMNAS_ASIGNACION + " " +
         "FROM ASIGNACION_HORARIO a JOIN TURNO t ON t.id_turno = a.id_turno " +
         "WHERE a.id_empleado = :empleadoId " +
+        (incluirInactivas ? "" : "AND a.estado IN ('Activo', 'Descanso') ") +
         "ORDER BY a.fecha_desde, a.id_asignacion";
 
     return database.ejecutar(sql, { empleadoId: empleadoId })
         .then(function (resultado) {
             return resultado.rows.map(asignacionDesdeFila);
+        });
+}
+
+function desactivarAsignacion(id) {
+    let sql =
+        "UPDATE ASIGNACION_HORARIO SET estado = 'Inactivo' " +
+        "WHERE id_asignacion = :id AND estado = 'Activo'";
+
+    return database.ejecutar(sql, { id: id })
+        .then(function (resultado) {
+            return resultado.rowsAffected > 0;
+        });
+}
+
+function activarAsignacion(id) {
+    let sql =
+        "UPDATE ASIGNACION_HORARIO SET estado = 'Activo' " +
+        "WHERE id_asignacion = :id AND estado = 'Inactivo'";
+
+    return database.ejecutar(sql, { id: id })
+        .then(function (resultado) {
+            return resultado.rowsAffected > 0;
+        });
+}
+
+function agregarDiaLibre(datos) {
+    let sql =
+        "INSERT INTO ASIGNACION_HORARIO (id_empleado, id_turno, fecha_desde, fecha_hasta, estado) " +
+        "VALUES (:empleadoId, :turnoId, TO_DATE(:fechaDesde, 'YYYY-MM-DD'), " +
+        "        TO_DATE(:fechaHasta, 'YYYY-MM-DD'), 'Descanso') " +
+        "RETURNING id_asignacion INTO :id";
+
+    let parametros = {
+        empleadoId: datos.empleadoId,
+        turnoId: datos.turnoId,
+        fechaDesde: datos.fecha,
+        fechaHasta: datos.fecha,
+        id: { dir: database.oracledb.BIND_OUT, type: database.oracledb.NUMBER }
+    };
+
+    return database.ejecutar(sql, parametros)
+        .then(function (resultado) {
+            return buscarAsignacionPorId(resultado.outBinds.id[0]);
+        });
+}
+
+function eliminarDiaLibre(id) {
+    let sql = "DELETE FROM ASIGNACION_HORARIO WHERE id_asignacion = :id AND estado = 'Descanso'";
+
+    return database.ejecutar(sql, { id: id })
+        .then(function (resultado) {
+            return resultado.rowsAffected > 0;
         });
 }
 
@@ -154,5 +199,9 @@ module.exports = {
     existeNombreTurno: existeNombreTurno,
     agregarAsignacion: agregarAsignacion,
     buscarAsignacionPorId: buscarAsignacionPorId,
-    obtenerAsignacionesPorEmpleado: obtenerAsignacionesPorEmpleado
+    obtenerAsignacionesPorEmpleado: obtenerAsignacionesPorEmpleado,
+    desactivarAsignacion: desactivarAsignacion,
+    activarAsignacion: activarAsignacion,
+    agregarDiaLibre: agregarDiaLibre,
+    eliminarDiaLibre: eliminarDiaLibre
 };
