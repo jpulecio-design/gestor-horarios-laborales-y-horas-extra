@@ -48,7 +48,6 @@ function Horarios() {
     cargarTurnos()
   }, [])
 
-  // El empleado ve directamente su propio horario al entrar.
   useEffect(() => {
     if (esEmpleado && usuario?.id) {
       verHorario(usuario.id)
@@ -87,7 +86,12 @@ function Horarios() {
     setMensaje(null)
     try {
       await apiHorarios.asignar(formAsignacion)
-      setMensaje({ tipo: 'exito', texto: 'Turno asignado correctamente.' })
+      setMensaje({
+        tipo: 'exito',
+        texto: formAsignacion.fechaHasta
+          ? `Turno especial asignado: reemplaza el horario base del ${formAsignacion.fechaDesde} al ${formAsignacion.fechaHasta}, y después el horario base vuelve solo.`
+          : 'Horario base asignado correctamente.',
+      })
       setFormAsignacion({ ...ASIGNACION_VACIA, empleadoId: formAsignacion.empleadoId })
       if (String(empleadoVer) === String(formAsignacion.empleadoId)) {
         verHorario(formAsignacion.empleadoId)
@@ -111,6 +115,47 @@ function Horarios() {
       ])
       setSemana(datosSemana)
       setAsignaciones(datosAsignaciones)
+    } catch (err) {
+      setMensaje({ tipo: 'error', texto: err.message })
+    }
+  }
+
+  async function eliminarTurno(dia) {
+    const turno = dia.turno
+    const esProgramacion = turno.origen === 'Programación'
+    const esEspecial = turno.tipoAsignacion === 'Especial'
+
+    let pregunta = `¿Eliminar el turno programado del ${dia.fecha}?`
+    if (!esProgramacion) {
+      pregunta = esEspecial
+        ? `Se desactivará el turno especial "${turno.nombre}" en todas sus fechas, no solo el ${dia.fecha}. El horario base volverá a aplicarse. ¿Continuar?`
+        : `¿Quitar el turno "${turno.nombre}" del ${dia.fecha}? Solo se quita ese día; los demás días del horario base no cambian.`
+    }
+    if (!window.confirm(pregunta)) return
+
+    setMensaje(null)
+    try {
+      let r
+      if (esProgramacion) {
+        r = await apiHorarios.eliminarDia(empleadoVer, dia.fecha)
+      } else if (esEspecial) {
+        r = await apiHorarios.desactivarAsignacion(turno.asignacionId)
+      } else {
+        r = await apiHorarios.quitarDiaBase(empleadoVer, dia.fecha)
+      }
+      await verHorario(empleadoVer)
+      setMensaje({ tipo: 'exito', texto: r.mensaje })
+    } catch (err) {
+      setMensaje({ tipo: 'error', texto: err.message })
+    }
+  }
+
+  async function cambiarAsignacion(accion, id) {
+    setMensaje(null)
+    try {
+      const r = await accion(id)
+      await verHorario(empleadoVer)
+      setMensaje({ tipo: 'exito', texto: r.mensaje })
     } catch (err) {
       setMensaje({ tipo: 'error', texto: err.message })
     }
@@ -249,7 +294,7 @@ function Horarios() {
             />
           </label>
           <label className="campo">
-            Hasta (opcional)
+            Hasta (vacío = horario base)
             <input
               type="date"
               value={formAsignacion.fechaHasta}
@@ -299,10 +344,18 @@ function Horarios() {
                   <div className="fecha">{dia.fecha}</div>
                   {dia.turno ? (
                     <>
-                      <div className="turno">{dia.turno.nombre}</div>
+                      <div className="turno">
+                        {dia.turno.nombre}
+                        {dia.turno.tipoAsignacion === 'Especial' && ' (especial)'}
+                      </div>
                       <div>
                         {dia.turno.horaEntrada} - {dia.turno.horaSalida}
                       </div>
+                      {!esEmpleado && (
+                        <button type="button" onClick={() => eliminarTurno(dia)}>
+                          Eliminar
+                        </button>
+                      )}
                     </>
                   ) : (
                     <div className="libre">Sin turno</div>
@@ -325,9 +378,11 @@ function Horarios() {
                     <tr>
                       <th>Id</th>
                       <th>Turno</th>
+                      <th>Tipo</th>
                       <th>Desde</th>
                       <th>Hasta</th>
                       <th>Estado</th>
+                      {!esEmpleado && <th></th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -335,9 +390,36 @@ function Horarios() {
                       <tr key={asignacion.id}>
                         <td>{asignacion.id}</td>
                         <td>{asignacion.turno.nombre}</td>
+                        <td>
+                          {asignacion.estado === 'Descanso'
+                            ? 'Día libre'
+                            : asignacion.fechaHasta
+                              ? 'Especial'
+                              : 'Base'}
+                        </td>
                         <td>{asignacion.fechaDesde}</td>
                         <td>{asignacion.fechaHasta || 'Sin límite'}</td>
-                        <td>{asignacion.estado}</td>
+                        <td>{asignacion.estado === 'Inactivo' ? 'Desactivado' : 'Activado'}</td>
+                        {!esEmpleado && (
+                          <td>
+                            {asignacion.estado === 'Descanso' && (
+                              <button
+                                type="button"
+                                onClick={() => cambiarAsignacion(apiHorarios.desactivarAsignacion, asignacion.id)}
+                              >
+                                Restaurar día
+                              </button>
+                            )}
+                            {asignacion.estado === 'Inactivo' && (
+                              <button
+                                type="button"
+                                onClick={() => cambiarAsignacion(apiHorarios.reactivarAsignacion, asignacion.id)}
+                              >
+                                Reactivar
+                              </button>
+                            )}
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
