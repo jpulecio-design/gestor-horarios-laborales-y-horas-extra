@@ -60,6 +60,19 @@ export const apiHorarios = {
 
 }
 
+export const apiRelevos = {
+  companeros: () => cliente.get('/horarios/relevos/companeros').then((r) => r.data),
+  agenda: (empleadoId, dias) =>
+    cliente
+      .get(`/horarios/relevos/agenda/${empleadoId}`, { params: dias ? { dias } : {} })
+      .then((r) => r.data),
+  enviadas: (empleadoId) => cliente.get(`/horarios/relevos/enviadas/${empleadoId}`).then((r) => r.data),
+  recibidas: (empleadoId) => cliente.get(`/horarios/relevos/recibidas/${empleadoId}`).then((r) => r.data),
+  obtener: (id) => cliente.get(`/horarios/relevos/${id}`).then((r) => r.data),
+  solicitar: (datos) => cliente.post('/horarios/relevos', datos).then((r) => r.data),
+  responder: (id, datos) => cliente.patch(`/horarios/relevos/${id}/respuesta`, datos).then((r) => r.data),
+}
+
 export const apiMonitoreo = {
   general: ({ desde, hasta } = {}) =>
     cliente.get('/monitoreo/general', { params: { desde, hasta } }).then((r) => r.data),

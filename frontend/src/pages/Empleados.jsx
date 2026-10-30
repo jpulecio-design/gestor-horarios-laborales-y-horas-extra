@@ -52,6 +52,7 @@ function Empleados() {
         apellido: detalle.usuario.apellido,
         cedula: detalle.usuario.cedula,
         correo: detalle.usuario.correo,
+        // el backend ya no envía la contraseña; vacía = se conserva la actual
         contrasena: '',
         telefono: detalle.usuario.telefono,
         fechaIngreso: detalle.fechaIngreso,

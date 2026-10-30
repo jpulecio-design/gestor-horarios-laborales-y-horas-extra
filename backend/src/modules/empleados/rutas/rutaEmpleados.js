@@ -11,14 +11,15 @@ const router = express.Router();
 const ADMINISTRADOR = "Administrador";
 const LECTURA_EMPLEADOS = ["Administrador", "Contadora"];
 
-// Copia del empleado sin la contrasena: el hash nunca sale por la API.
+// quita el hash de la contraseña para que nunca salga del servidor
 function sinContrasena(empleado) {
-    if (empleado === null) {
-        return null;
+    if (empleado === null || empleado === undefined) {
+        return empleado;
     }
-    let usuario = Object.assign({}, empleado.usuario);
-    delete usuario.contrasena;
-    return Object.assign({}, empleado, { usuario: usuario });
+    let copia = Object.assign({}, empleado);
+    copia.usuario = Object.assign({}, empleado.usuario);
+    delete copia.usuario.contrasena;
+    return copia;
 }
 
 // GET /api/empleados

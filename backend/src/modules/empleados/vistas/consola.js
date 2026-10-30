@@ -33,7 +33,8 @@ function pedirDatosEmpleado(empleadoActual) {
             contactoNombre: empleadoActual.contactoEmergencia.nombre,
             contactoTelefono: empleadoActual.contactoEmergencia.telefono,
             contactoParentesco: empleadoActual.contactoEmergencia.parentesco,
-            telegramChatId: empleadoActual.telegramChatId
+            telegramChatId: empleadoActual.telegramChatId,
+            estado: empleadoActual.usuario.estado
         };
     }
 
@@ -50,6 +51,12 @@ function pedirDatosEmpleado(empleadoActual) {
     }
 
     let telefono = preguntar("Teléfono", actual.telefono);
+
+    // el estado solo se pregunta al editar, un empleado nuevo siempre nace activo
+    let estado = "Activo";
+    if (empleadoActual !== null) {
+        estado = preguntar("Estado (Activo/Inactivo)", actual.estado);
+    }
 
     console.log("\n--- Datos propios del empleado ---");
     let fechaIngreso = preguntar("Fecha de ingreso (AAAA-MM-DD)", actual.fechaIngreso);
@@ -73,6 +80,7 @@ function pedirDatosEmpleado(empleadoActual) {
         correo: correo,
         contrasena: contrasena,
         telefono: telefono,
+        estado: estado,
         fechaIngreso: fechaIngreso,
         cargo: cargo,
         salarioBase: salarioBase,
@@ -81,6 +89,12 @@ function pedirDatosEmpleado(empleadoActual) {
         contactoParentesco: contactoParentesco,
         telegramChatId: telegramChatId
     };
+}
+
+// hace una pregunta de sí o no, devuelve true solo si responden "s"
+function confirmar(texto) {
+    let respuesta = prompt(texto + " (s/n): ");
+    return respuesta.toLowerCase() === "s";
 }
 
 // convierte id a numero y el prompt devuelve texto
@@ -117,12 +131,14 @@ function mostrarMenu() {
     console.log("1. Registrar empleado");
     console.log("2. Ver empleados");
     console.log("3. Editar empleado");
+    console.log("4. Activar / Inactivar empleado");
     console.log("0. Salir");
     return prompt("Elige una opción: ");
 }
 
 module.exports = {
     pedirDatosEmpleado: pedirDatosEmpleado,
+    confirmar: confirmar,
     pedirId: pedirId,
     mostrarEmpleados: mostrarEmpleados,
     mostrarMenu: mostrarMenu
