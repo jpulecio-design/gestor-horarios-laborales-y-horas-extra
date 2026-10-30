@@ -4,14 +4,8 @@ const importadorExcel = require("./importadorExcel");
 const repositorio = require("../datos/repositorioProgramacion");
 const repositorioEmpleados = require("../../empleados/repositorios/repositorioEmpleados");
 
-// CU04: Parametrizar Horarios y Plantillas de Turnos.
-// Todas las respuestas son { exito: true, mensaje, datos } o
-// { exito: false, mensaje, errores? }. Los errores de base de datos se propagan.
-
 const MAX_DIAS_CONSULTA = 366;
 
-// El empleado debe existir (CU09) y estar activo.
-// devuelve { empleado } o { mensaje } con el error.
 async function validarEmpleado(empleadoId) {
     let id = Number(empleadoId);
     if (!Number.isInteger(id) || id <= 0) {
@@ -36,8 +30,6 @@ function primeraYUltima(dias) {
     return { desde: fechas[0], hasta: fechas[fechas.length - 1] };
 }
 
-// Lee de la base los dias guardados alrededor de los nuevos: un dia antes y uno
-// despues, porque un turno nocturno puede invadir el dia siguiente.
 function existentesAlrededor(empleadoId, dias) {
     let rango = primeraYUltima(dias);
     return repositorio.obtenerPorEmpleadoEntre(empleadoId,
@@ -65,14 +57,10 @@ function totalHoras(dias) {
     return Math.round(total * 100) / 100;
 }
 
-// -------------------- catalogo --------------------
 function tiposTurno() {
     return programacion.TIPOS_TURNO.slice();
 }
 
-// -------------------- programar dias (carga manual) --------------------
-// dias = [{ fecha, horaEntrada, horaSalida, tipoTurno }]
-// Las fechas que ya tienen turno se actualizan; las demas se crean.
 async function programarDias(empleadoId, dias, hoy) {
     hoy = hoy || programacion.hoyTexto();
 
@@ -146,8 +134,6 @@ async function programarDias(empleadoId, dias, hoy) {
     };
 }
 
-// -------------------- importar plantilla Excel --------------------
-// Valida el archivo completo y solo guarda si no hay ningun error (una transaccion).
 async function importarProgramacion(buffer, hoy) {
     hoy = hoy || programacion.hoyTexto();
 
@@ -159,7 +145,6 @@ async function importarProgramacion(buffer, hoy) {
         return nombre + " (" + (lectura.letras[nombre] || "-") + ")";
     }
 
-    // 1. cada fila por separado: empleadoId y reglas del dia
     let validas = [];
     lectura.filas.forEach(function (f) {
         let id = Number(f.empleadoId);
@@ -185,7 +170,6 @@ async function importarProgramacion(buffer, hoy) {
         }
     });
 
-    // 2. agrupar por empleado; revisar existencia/estado y fechas repetidas
     let porEmpleado = {};
     validas.forEach(function (d) {
         if (porEmpleado[d.empleadoId] === undefined) {
@@ -214,7 +198,6 @@ async function importarProgramacion(buffer, hoy) {
         }
         empleados[id] = validacion.empleado;
 
-        // 3. solapamientos dentro del archivo y contra lo ya guardado
         let existentes = await existentesAlrededor(id, porEmpleado[id].dias);
         programacion.buscarSolapamientos(porEmpleado[id].dias, existentes).forEach(function (c) {
             errores.push({ fila: c.ref, columna: columna("horario"), mensaje: c.mensaje });
@@ -230,7 +213,6 @@ async function importarProgramacion(buffer, hoy) {
         };
     }
 
-    // 4. guardar todo junto (o nada) y armar el resumen
     let todos = [];
     ids.forEach(function (id) {
         porEmpleado[id].dias.forEach(function (d) {
@@ -266,7 +248,6 @@ async function importarProgramacion(buffer, hoy) {
     };
 }
 
-// -------------------- consultar --------------------
 async function consultarProgramacion(empleadoId, desde, hasta) {
     let validacion = await validarEmpleado(empleadoId);
     if (validacion.empleado === undefined) {
@@ -298,7 +279,6 @@ async function consultarProgramacion(empleadoId, desde, hasta) {
     };
 }
 
-// -------------------- quitar el turno de un dia --------------------
 async function eliminarDia(empleadoId, fecha, hoy) {
     hoy = hoy || programacion.hoyTexto();
 

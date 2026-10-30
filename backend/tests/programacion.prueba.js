@@ -1,9 +1,4 @@
-// Pruebas del CU04 (Parametrizar Horarios y Plantillas de Turnos).
-// NO usan Oracle: los repositorios se reemplazan por datos en memoria y la
-// transaccion se prueba con una conexion simulada. Se pueden correr sin base de datos:
-//   node tests/programacion.prueba.js
 
-// credenciales falsas para que database.js no intente leer una base real
 process.env.DB_USER = process.env.DB_USER || "prueba";
 process.env.DB_PASSWORD = process.env.DB_PASSWORD || "prueba";
 process.env.DB_CONNECT_STRING = process.env.DB_CONNECT_STRING || "localhost:1521/prueba";
@@ -30,9 +25,8 @@ function verificar(nombre, condicion, detalle) {
 }
 
 const HOY = programacion.hoyTexto();
-const D = function (n) { return programacion.sumarDias(HOY, n); }; // fecha relativa a hoy
+const D = function (n) { return programacion.sumarDias(HOY, n); };
 
-// ---------------- conexion Oracle simulada (para la transaccion) ----------------
 let conexionFalsa = null;
 
 function crearConexionFalsa(fallarEnLlamada) {
@@ -46,7 +40,6 @@ function crearConexionFalsa(fallarEnLlamada) {
             if (fallarEnLlamada !== undefined && this.llamadas.length === fallarEnLlamada) {
                 return Promise.reject(new Error("ORA-00001: fallo simulado"));
             }
-            // el UPDATE no encuentra filas (el dia es nuevo) -> el repositorio hace INSERT
             return Promise.resolve({ rowsAffected: sql.indexOf("UPDATE") === 0 ? 0 : 1, rows: [] });
         },
         commit: function () { this.confirmado = true; return Promise.resolve(); },
@@ -62,13 +55,12 @@ database.oracledb.createPool = function () {
     });
 };
 
-//  base en memoria para el controlador 
 const empleados = {
     1: { usuario: { id: 1, nombre: "Ana", apellido: "Prueba", estado: "Activo" } },
     2: { usuario: { id: 2, nombre: "Beto", apellido: "Prueba", estado: "Activo" } },
     3: { usuario: { id: 3, nombre: "Ciro", apellido: "Inactivo", estado: "Inactivo" } }
 };
-let tabla = []; // filas de HORARIO_ASIGNADO
+let tabla = [];
 
 function usarBaseEnMemoria() {
     repositorioEmpleados.buscarEmpleadoPorId = async function (id) { return empleados[id] || null; };
@@ -76,7 +68,6 @@ function usarBaseEnMemoria() {
         return tabla.filter(function (f) { return f.empleadoId === id && f.fecha >= desde && f.fecha <= hasta; })
             .map(function (f) { return Object.assign({}, f); });
     };
-    // todo o nada, igual que la transaccion real
     repositorioProgramacion.guardarDias = async function (dias) {
         let copia = tabla.map(function (f) { return Object.assign({}, f); });
         let insertados = 0;
@@ -145,7 +136,7 @@ async function probar() {
     verificar("devuelve 2 insertados", r.insertados === 2 && r.actualizados === 0, JSON.stringify(r));
     verificar("la conexion se devuelve al pool", conexionFalsa.cerrada);
 
-    conexionFalsa = crearConexionFalsa(4); // falla el segundo INSERT
+    conexionFalsa = crearConexionFalsa(4);
     let error = null;
     try {
         await repositorioProgramacion.guardarDias([
@@ -184,7 +175,6 @@ async function probar() {
 
     console.log("\n=== PRUEBA 4: solapamientos (no guarda nada) ===");
     let antes = JSON.stringify(tabla);
-    // el nocturno guardado en D(3) termina a las 06:00 de D(4)
     r = await controlador.programarDias(1, [dia(D(4), "05:00", "13:00", "Diurno")], HOY);
     verificar("choque con el nocturno guardado del dia anterior", !r.exito && r.errores[0].mensaje.indexOf("ya guardado Nocturno 22:00-06:00 del " + D(3)) !== -1,
         r.errores ? r.errores[0].mensaje : r.mensaje);
@@ -229,7 +219,6 @@ async function probar() {
     ]), HOY);
     verificar("Excel valido se importa", r.exito && r.datos.totalDias === 3 && r.datos.totalEmpleados === 2, r.mensaje);
 
-    // celdas con formato de fecha y hora de Excel (no texto)
     let p = D(5).split("-").map(Number);
     r = await controlador.importarProgramacion(await excel([
         [2, new Date(Date.UTC(p[0], p[1] - 1, p[2])), new Date(Date.UTC(1899, 11, 30, 6, 0)), 14 / 24, "Diurno"]
@@ -238,15 +227,15 @@ async function probar() {
 
     antes = JSON.stringify(tabla);
     r = await controlador.importarProgramacion(await excel([
-        ["", D(6), "06:00", "14:00", "Diurno"],           // fila 2: empleado vacio
-        [1, "2026-02-30", "06:00", "14:00", "Diurno"],    // fila 3: fecha imposible
-        [1, D(7), "6am", "14:00", "Diurno"],              // fila 4: hora invalida
-        [1, D(8), "06:00", "14:00", "Mixto"],             // fila 5: tipo invalido
-        [999, D(9), "06:00", "14:00", "Diurno"],          // fila 6: empleado inexistente
-        [3, D(9), "06:00", "14:00", "Diurno"],            // fila 7: empleado inactivo
-        [1, D(3), "05:00", "13:00", "Diurno"],            // fila 8: choca con el nocturno guardado de D(2)
-        [1, D(11), "06:00", "14:00", "Diurno"],           // fila 9
-        [1, D(11), "14:00", "22:00", "Vespertino"]        // fila 10: fecha repetida
+        ["", D(6), "06:00", "14:00", "Diurno"],
+        [1, "2026-02-30", "06:00", "14:00", "Diurno"],
+        [1, D(7), "6am", "14:00", "Diurno"],
+        [1, D(8), "06:00", "14:00", "Mixto"],
+        [999, D(9), "06:00", "14:00", "Diurno"],
+        [3, D(9), "06:00", "14:00", "Diurno"],
+        [1, D(3), "05:00", "13:00", "Diurno"],
+        [1, D(11), "06:00", "14:00", "Diurno"],
+        [1, D(11), "14:00", "22:00", "Vespertino"]
     ]), HOY);
     let en = function (fila, col) { return r.errores && r.errores.some(function (e) { return e.fila === fila && e.columna.indexOf(col) === 0; }); };
     verificar("FA1: Excel con errores se rechaza completo", !r.exito && JSON.stringify(tabla) === antes, r.mensaje);
@@ -267,7 +256,6 @@ async function probar() {
     try { await controlador.importarProgramacion(Buffer.from("no es excel"), HOY); } catch (e) { error = e; }
     verificar("archivo danado se marca como invalido", error !== null && error.esArchivoInvalido === true);
 
-    // reintentar el mismo archivo valido: actualiza, no duplica
     r = await controlador.importarProgramacion(await excel([[1, D(1), "07:00", "15:00", "Diurno"]]), HOY);
     verificar("reimportar una fecha la actualiza sin duplicar", r.exito && r.datos.actualizados === 1 &&
         tabla.filter(function (f) { return f.empleadoId === 1 && f.fecha === D(1); }).length === 1, r.mensaje);

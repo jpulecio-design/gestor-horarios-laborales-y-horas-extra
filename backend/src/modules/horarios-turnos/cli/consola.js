@@ -1,22 +1,18 @@
 const prompt = require("prompt-sync")({ sigint: true });
 
-// pide un texto y quita espacios
 function pedirTexto(texto) {
     return prompt(texto + ": ").trim();
 }
 
-// pide un id y lo convierte a numero
 function pedirId(texto) {
     return Number(prompt(texto + ": "));
 }
 
-// pide un texto; si el usuario deja vacio, devuelve el valor por defecto
 function pedirTextoConDefecto(texto, defecto) {
     let valor = prompt(texto + " (" + defecto + "): ").trim();
     return valor === "" ? defecto : valor;
 }
 
-// muestra la lista de turnos
 function mostrarTurnos(lista) {
     console.log("\n===== TURNOS =====");
 
@@ -37,7 +33,6 @@ function mostrarTurnos(lista) {
     }
 }
 
-// muestra las asignaciones (horarios) de un empleado
 function mostrarAsignaciones(lista) {
     console.log("\n===== HORARIOS ASIGNADOS =====");
 
@@ -58,7 +53,6 @@ function mostrarAsignaciones(lista) {
     }
 }
 
-// muestra la grilla semanal
 function mostrarSemana(semana) {
     console.log("\n===== SEMANA DEL EMPLEADO " + semana.empleadoId +
         " (inicia " + semana.inicio + ") =====");
@@ -72,7 +66,6 @@ function mostrarSemana(semana) {
     }
 }
 
-// muestra el turno de hoy
 function mostrarHoy(hoy) {
     console.log("\n===== HORARIO DE HOY (" + hoy.fecha + ") =====");
 
@@ -86,7 +79,6 @@ function mostrarHoy(hoy) {
     }
 }
 
-// muestra el menu y devuelve la opcion elegida
 function mostrarMenu() {
     console.log("\n===== HORARIOS Y TURNOS (CU05) =====");
     console.log("1. Crear turno");

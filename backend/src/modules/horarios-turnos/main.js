@@ -2,8 +2,6 @@ const consola = require("./cli/consola");
 const controlador = require("./app/controladorHorarios");
 const repositorio = require("./datos/repositorioHorarios");
 
-// Consola para probar el CU05 de forma individual, sin levantar el servidor.
-//   node src/modules/horarios-turnos/main.js
 async function iniciar() {
     let continuar = true;
 

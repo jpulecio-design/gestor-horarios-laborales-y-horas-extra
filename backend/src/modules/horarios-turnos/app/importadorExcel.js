@@ -1,10 +1,5 @@
 const ExcelJS = require("exceljs");
 
-// Lee la plantilla de programacion (CU04) desde un .xlsx.
-// Primera hoja, fila 1 = encabezados, una fila por empleado y dia:
-// Las celdas pueden venir como texto o con formato de fecha/hora de Excel.
-// Este archivo solo LEE; las reglas de validacion estan en dominio/programacion.js.
-
 const COLUMNAS = ["empleadoId", "fecha", "horaEntrada", "horaSalida", "tipoTurno"];
 
 function archivoInvalido(mensaje) {
@@ -17,7 +12,6 @@ function dosDigitos(n) {
     return String(n).padStart(2, "0");
 }
 
-// Excel guarda fechas y horas como Date en UTC
 function textoFecha(valor) {
     if (valor instanceof Date) {
         return valor.getUTCFullYear() + "-" + dosDigitos(valor.getUTCMonth() + 1) + "-" + dosDigitos(valor.getUTCDate());
@@ -29,7 +23,6 @@ function textoHora(valor) {
     if (valor instanceof Date) {
         return dosDigitos(valor.getUTCHours()) + ":" + dosDigitos(valor.getUTCMinutes());
     }
-    // hora como fraccion del dia (0.25 = 06:00)
     if (typeof valor === "number" && valor >= 0 && valor < 1) {
         let minutos = Math.round(valor * 24 * 60);
         return dosDigitos(Math.floor(minutos / 60)) + ":" + dosDigitos(minutos % 60);
@@ -48,7 +41,6 @@ function textoDeCelda(celda, columna) {
     return celda.text === undefined || celda.text === null ? "" : String(celda.text).trim();
 }
 
-// devuelve { filas, errores, letras }:
 async function leerFilas(buffer) {
     let libro = new ExcelJS.Workbook();
     try {
@@ -93,7 +85,6 @@ async function leerFilas(buffer) {
         COLUMNAS.forEach(function (c) {
             datos[c] = textoDeCelda(fila.getCell(encabezados[c].indice), c);
         });
-        // fila completamente vacia: se ignora
         if (COLUMNAS.every(function (c) { return datos[c] === ""; })) {
             return;
         }
