@@ -68,6 +68,15 @@ router.get("/recibidas/:empleadoId", async (req, res) => {
     }
 });
 
+// todos los cambios de turno, solo para gestion
+router.get("/", autorizar(...GESTION), async (req, res) => {
+    try {
+        res.json(await controlador.todosLosRelevos());
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // una solicitud puntual
 router.get("/:id", async (req, res) => {
     try {
