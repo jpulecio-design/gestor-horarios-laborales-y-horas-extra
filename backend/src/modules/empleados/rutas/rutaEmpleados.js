@@ -111,16 +111,29 @@ router.post("/", autorizar(ADMINISTRADOR), (req, res) => {
 
 router.put("/:id", autorizar(ADMINISTRADOR), (req, res) => {
 
+    // aqui el controlador deja el motivo si no se pudo editar
+    let detalle = {};
+
     controlador.guardarEdicion(
         Number(req.params.id),
-        req.body
+        req.body,
+        detalle
     )
         .then(function (editado) {
 
-            if (!editado) {
+            if (!editado && detalle.noExiste) {
+
+                res.status(404).json({
+                    error: "No existe un empleado con ese id."
+                });
+
+                return;
+            }
+
+            if (!editado && !detalle.sinCambios) {
 
                 res.status(400).json({
-                    error: "No se pudo editar el empleado."
+                    error: detalle.error || "No se pudo editar el empleado."
                 });
 
                 return;
@@ -131,7 +144,14 @@ router.put("/:id", autorizar(ADMINISTRADOR), (req, res) => {
             )
                 .then(function (empleado) {
 
-                    res.json(sinContrasena(empleado));
+                    let respuesta = sinContrasena(empleado);
+
+                    // el frontend lo usa para avisar que no habia nada que guardar
+                    if (detalle.sinCambios) {
+                        respuesta.sinCambios = true;
+                    }
+
+                    res.json(respuesta);
 
                 });
 
