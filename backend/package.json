@@ -18,7 +18,13 @@
   },
   "scripts": {
     "start": "node src/server.js",
-    "test": "node tests/empleados.prueba.js && node tests/horas-extra.prueba.js && node tests/nomina.prueba.js && node tests/asistencia.prueba.js && node tests/asistencia-correccion.prueba.js && node tests/horarios.prueba.js && node tests/monitoreo.prueba.js && node tests/reportes.prueba.js && node tests/integracion.prueba.js"
+    "db:crear": "node scripts/db.js crear",
+    "db:datos": "node scripts/db.js datos",
+    "db:reiniciar": "node scripts/db.js reiniciar",
+    "db:verificar": "node scripts/db.js verificar",
+    "db:hashear": "node scripts/hashear-contrasenas.js",
+    "test": "node tests/empleados.prueba.js && node tests/horas-extra.prueba.js && node tests/nomina.prueba.js && node tests/asistencia.prueba.js && node tests/asistencia-correccion.prueba.js && node tests/horarios.prueba.js && node tests/programacion.prueba.js && node tests/horarios-conflictos.prueba.js && node tests/monitoreo.prueba.js && node tests/reportes.prueba.js && node tests/backups.prueba.js && node tests/integracion.prueba.js",
+    "test:backups": "node tests/backups.prueba.js"
   },
   "keywords": [],
   "author": "",
