@@ -42,9 +42,9 @@ function Empleados() {
     setMensaje(null)
   }
 
+  // primero trae el detalle y luego abre el formulario ya lleno
   async function editar(empleado) {
     setMensaje(null)
-    setMostrarForm(true)
     try {
       const detalle = await apiEmpleados.obtener(empleado.usuario.id)
       setForm({
@@ -64,6 +64,9 @@ function Empleados() {
         contactoParentesco: detalle.contactoEmergencia.parentesco,
       })
       setEditandoId(empleado.usuario.id)
+      setMostrarForm(true)
+      // el formulario esta arriba del listado
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (err) {
       setMensaje({ tipo: 'error', texto: err.message })
     }
@@ -92,8 +95,12 @@ function Empleados() {
     setMensaje(null)
     try {
       if (editandoId) {
-        await apiEmpleados.actualizar(editandoId, form)
-        setMensaje({ tipo: 'exito', texto: 'Empleado actualizado correctamente.' })
+        const actualizado = await apiEmpleados.actualizar(editandoId, form)
+        setMensaje(
+          actualizado.sinCambios
+            ? { tipo: 'info', texto: 'No había cambios para guardar.' }
+            : { tipo: 'exito', texto: 'Empleado actualizado correctamente.' },
+        )
       } else {
         await apiEmpleados.crear(form)
         setMensaje({ tipo: 'exito', texto: 'Empleado registrado correctamente.' })
