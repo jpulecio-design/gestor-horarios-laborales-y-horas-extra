@@ -1,9 +1,13 @@
 import { useState } from 'react'
 import { apiReportes } from '../api'
+import { useAuth } from '../context/useAuth'
 import { Alerta, Tarjeta } from '../components/Comunes'
+import PanelBackups from '../components/PanelBackups'
+import { guardarBlob } from '../util/descargas'
 import { aTexto, primerDiaDelMes } from '../util/formato'
 
 function Reportes() {
+  const { tieneRol } = useAuth()
   const [desde, setDesde] = useState(primerDiaDelMes())
   const [hasta, setHasta] = useState(aTexto(new Date()))
   const [mensaje, setMensaje] = useState(null)
@@ -20,14 +24,7 @@ function Reportes() {
     }
     try {
       const blob = await apiReportes.monitoreoXlsx({ desde, hasta })
-      const url = URL.createObjectURL(blob)
-      const enlace = document.createElement('a')
-      enlace.href = url
-      enlace.download = `reporte-${desde}_a_${hasta}.xlsx`
-      document.body.appendChild(enlace)
-      enlace.click()
-      document.body.removeChild(enlace)
-      URL.revokeObjectURL(url)
+      guardarBlob(blob, `reporte-${desde}_a_${hasta}.xlsx`)
       setMensaje({ tipo: 'exito', texto: 'Descarga iniciada.' })
     } catch (err) {
       setMensaje({ tipo: 'error', texto: err.message })
@@ -59,6 +56,9 @@ function Reportes() {
           </button>
         </div>
       </Tarjeta>
+
+      {/* Las copias de seguridad (CU11) solo las gestiona el Administrador. */}
+      {tieneRol('Administrador') && <PanelBackups />}
     </div>
   )
 }

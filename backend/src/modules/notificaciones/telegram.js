@@ -29,8 +29,9 @@ function enviarMensaje(chatId, texto) {
         "/sendMessage?chat_id=" + encodeURIComponent(chatId) +
         "&text=" + encodeURIComponent(texto);
 
-    //  Hacer la petición con fetch() 
-    return fetch(url)
+    //  Hacer la petición con fetch()
+    //  Se corta a los 10 segundos para que quien guarda no se quede esperando
+    return fetch(url, { signal: AbortSignal.timeout(10000) })
         .then(function (respuesta) {
             return respuesta.json();
         })

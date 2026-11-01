@@ -11,6 +11,7 @@ function Relevos() {
   const [enviadas, setEnviadas] = useState([])
   const [recibidas, setRecibidas] = useState([])
   const [companeros, setCompaneros] = useState([])
+  const [todas, setTodas] = useState([])
   const [cargando, setCargando] = useState(false)
   const [mensaje, setMensaje] = useState(null)
   const [form, setForm] = useState({ fecha: '', idCompanero: '' })
@@ -20,6 +21,11 @@ function Relevos() {
     setCargando(true)
     setMensaje(null)
     try {
+      // administrador y contadora no tienen turnos: solo ven todos los cambios
+      if (!esEmpleado) {
+        setTodas((await apiRelevos.todas()) || [])
+        return
+      }
       const [a, e, r, listaCompaneros] = await Promise.all([
         apiRelevos.agenda(empleadoId, 14),
         apiRelevos.enviadas(empleadoId),
@@ -70,6 +76,61 @@ function Relevos() {
     } catch (err) {
       setMensaje({ tipo: 'error', texto: err.message })
     }
+  }
+
+  // vista de administrador y contadora: quien le cedio el turno a quien
+  if (!esEmpleado) {
+    return (
+      <div>
+        <h1>Relevos y solicitudes de turno</h1>
+        {mensaje && <Alerta tipo={mensaje.tipo}>{mensaje.texto}</Alerta>}
+        {cargando && <Cargando />}
+
+        <Tarjeta titulo="Cambios de turno de los empleados">
+          {todas.length === 0 && !cargando ? <SinDatos /> : null}
+          {todas.length > 0 && (
+            <div className="tabla-envoltura">
+              <table className="tabla">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Fecha del turno</th>
+                    <th>Turno</th>
+                    <th>Horario</th>
+                    <th>Cede</th>
+                    <th>Cubre</th>
+                    <th>Estado</th>
+                    <th>Solicitada</th>
+                    <th>Respondida</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {todas.map((s) => (
+                    <tr key={s.id}>
+                      <td>{s.id}</td>
+                      <td>{s.horario?.fecha}</td>
+                      <td>{s.horario?.tipoTurno}</td>
+                      <td>
+                        {s.horario?.horaEntrada} - {s.horario?.horaSalida}
+                      </td>
+                      <td>
+                        {s.solicitante?.nombre} {s.solicitante?.apellido}
+                      </td>
+                      <td>
+                        {s.companero?.nombre} {s.companero?.apellido}
+                      </td>
+                      <td>{s.estado}</td>
+                      <td>{s.fechaSolicitud}</td>
+                      <td>{s.fechaRespuesta || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Tarjeta>
+      </div>
+    )
   }
 
   return (

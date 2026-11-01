@@ -12,7 +12,7 @@ const comparador = require("../src/modules/backups/servicios/comparadorBackup");
 const controlador = require("../src/modules/backups/controladores/controladorBackups");
 const tarea = require("../src/modules/backups/tareas/tareaBackupAutomatico");
 const telegram = require("../src/modules/notificaciones/telegram");
-const servicioAutenticacion = require("../src/modules/auth/compartido/servicioAutenticacion");
+const seguridad = require("../src/modules/auth/compartido/seguridad");
 const app = require("../src/app");
 
 let fallas = 0;
@@ -326,18 +326,14 @@ async function probar() {
         informe.totales.nuevos === 1 && informe.hayDiferencias === true);
 
     console.log("\n=== PRUEBA 6: solo el Administrador entra (CU01) ===");
-    servicioAutenticacion.iniciarSesion = function (correo, clave) {
-        if (correo === "admin@empresa.com" && clave === "admin123") {
-            return Promise.resolve({ exito: true, usuario: { id: 2, username: correo, rol: "Administrador" } });
-        }
-        if (correo === "carlos@empresa.com" && clave === "clave123") {
-            return Promise.resolve({ exito: true, usuario: { id: 1, username: correo, rol: "Empleado" } });
-        }
-        return Promise.resolve({ exito: false, mensaje: "Usuario o contraseña incorrectos" });
+    // La sesion es un token JWT (Authorization: Bearer ...), igual que en el resto de la API.
+    const tokens = {
+        admin: seguridad.firmarToken({ id: 2, username: "admin@empresa.com", rol: "Administrador" }),
+        carlos: seguridad.firmarToken({ id: 1, username: "carlos@empresa.com", rol: "Empleado" })
     };
 
-    function basic(correo, clave) {
-        return { Authorization: "Basic " + Buffer.from(correo + ":" + clave).toString("base64") };
+    function bearer(token) {
+        return { Authorization: "Bearer " + token };
     }
 
     reiniciarFalsos();
@@ -348,28 +344,28 @@ async function probar() {
                 let res = await fetch(base);
                 verificar("sin credenciales -> 401", res.status === 401, "status=" + res.status);
 
-                res = await fetch(base, { headers: basic("admin@empresa.com", "mala") });
-                verificar("clave incorrecta -> 401", res.status === 401, "status=" + res.status);
+                res = await fetch(base, { headers: bearer("token-invalido") });
+                verificar("token inválido -> 401", res.status === 401, "status=" + res.status);
 
-                res = await fetch(base, { headers: basic("carlos@empresa.com", "clave123") });
+                res = await fetch(base, { headers: bearer(tokens.carlos) });
                 verificar("rol Empleado -> 403", res.status === 403, "status=" + res.status);
 
-                res = await fetch(base, { headers: basic("admin@empresa.com", "admin123") });
+                res = await fetch(base, { headers: bearer(tokens.admin) });
                 let body = await res.json();
                 verificar("Administrador -> 200 con la fecha del último respaldo",
                     res.status === 200 && body.ultimoRespaldo === null && Array.isArray(body.historial),
                     "status=" + res.status);
 
-                res = await fetch(base + "/1/comparacion", { headers: basic("admin@empresa.com", "admin123") });
+                res = await fetch(base + "/1/comparacion", { headers: bearer(tokens.admin) });
                 body = await res.json();
                 verificar("EX01 por HTTP -> 404 con el mensaje",
                     res.status === 404 && body.error === "No hay respaldos disponibles para comparación",
                     JSON.stringify(body));
 
-                res = await fetch(base + "/abc/descarga", { headers: basic("admin@empresa.com", "admin123") });
+                res = await fetch(base + "/abc/descarga", { headers: bearer(tokens.admin) });
                 verificar("id inválido -> 400", res.status === 400, "status=" + res.status);
 
-                res = await fetch(base + "/5/excel", { headers: basic("admin@empresa.com", "admin123") });
+                res = await fetch(base + "/5/excel", { headers: bearer(tokens.admin) });
                 verificar("Excel de un respaldo que no existe -> 404", res.status === 404, "status=" + res.status);
 
                 res = await fetch(base + "/5/excel");

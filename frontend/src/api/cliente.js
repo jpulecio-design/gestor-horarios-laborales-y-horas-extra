@@ -17,7 +17,7 @@ cliente.interceptors.request.use((configuracion) => {
 
 cliente.interceptors.response.use(
   (respuesta) => respuesta,
-  (error) => {
+  async (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token')
       localStorage.removeItem('usuario')
@@ -26,9 +26,19 @@ cliente.interceptors.response.use(
       }
     }
 
+    // En las descargas (responseType: 'blob') el error JSON llega como Blob.
+    let datos = error.response?.data
+    if (datos instanceof Blob) {
+      try {
+        datos = JSON.parse(await datos.text())
+      } catch {
+        datos = null
+      }
+    }
+
     const mensaje =
-      error.response?.data?.error ||
-      error.response?.data?.mensaje ||
+      datos?.error ||
+      datos?.mensaje ||
       error.message ||
       'Error de conexión con el servidor'
     return Promise.reject(new Error(mensaje))

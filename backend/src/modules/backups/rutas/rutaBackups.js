@@ -2,11 +2,12 @@ const express = require("express");
 
 const controlador = require("../controladores/controladorBackups");
 
-const soloAdministrador = require("../../auth/compartido/soloAdministrador");
+const { autorizar } = require("../../../../middlewares/autorizar");
 
 const router = express.Router();
 
-router.use(soloAdministrador);
+// El token ya lo valida app.js (middleware autenticar); aqui solo se exige el rol.
+router.use(autorizar("Administrador"));
 
 function idDesdeUrl(req) {
     let id = Number(req.params.id);
