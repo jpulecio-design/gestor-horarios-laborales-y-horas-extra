@@ -9,6 +9,7 @@ const repositorioEmpleados = require("../../empleados/repositorios/repositorioEm
 // { exito: false, mensaje, errores? }. Los errores de base de datos se propagan.
 
 const MAX_DIAS_CONSULTA = 366;
+const MAX_DIAS_PROGRAMACION = 366;
 
 // El empleado debe existir (CU09) y estar activo.
 // devuelve { empleado } o { mensaje } con el error.
@@ -86,6 +87,9 @@ async function programarDias(empleadoId, dias, hoy) {
     if (!Array.isArray(dias) || dias.length === 0) {
         return { exito: false, mensaje: "ERROR: envía al menos un día en \"dias\"." };
     }
+    if (dias.length > MAX_DIAS_PROGRAMACION) {
+        return { exito: false, mensaje: "ERROR: no se pueden programar más de " + MAX_DIAS_PROGRAMACION + " días en una sola petición." };
+    }
 
     let errores = [];
     let validos = [];
@@ -98,8 +102,10 @@ async function programarDias(empleadoId, dias, hoy) {
         });
         if (r.dia !== null) {
             if (vistas[r.dia.fecha]) {
-                errores.push({ dia: indice + 1, fecha: r.dia.fecha, campo: "fecha",
-                    mensaje: "está repetida en la programación (solo se permite un turno por día)." });
+                errores.push({
+                    dia: indice + 1, fecha: r.dia.fecha, campo: "fecha",
+                    mensaje: "está repetida en la programación (solo se permite un turno por día)."
+                });
             } else {
                 vistas[r.dia.fecha] = true;
                 r.dia.ref = indice + 1;
@@ -193,8 +199,10 @@ async function importarProgramacion(buffer, hoy) {
         }
         let grupo = porEmpleado[d.empleadoId];
         if (grupo.fechas[d.fecha] !== undefined) {
-            errores.push({ fila: d.ref, columna: columna("fecha"),
-                mensaje: "el empleado " + d.empleadoId + " ya tiene la fecha " + d.fecha + " en la fila " + grupo.fechas[d.fecha] + " (solo un turno por día)." });
+            errores.push({
+                fila: d.ref, columna: columna("fecha"),
+                mensaje: "el empleado " + d.empleadoId + " ya tiene la fecha " + d.fecha + " en la fila " + grupo.fechas[d.fecha] + " (solo un turno por día)."
+            });
             return;
         }
         grupo.fechas[d.fecha] = d.ref;

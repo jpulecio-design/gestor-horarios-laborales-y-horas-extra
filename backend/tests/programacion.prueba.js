@@ -181,6 +181,14 @@ async function probar() {
     verificar("empleado inactivo se rechaza", !r.exito && r.mensaje.indexOf("inactivo") !== -1, r.mensaje);
     r = await controlador.programarDias(1, [], HOY);
     verificar("lista de dias vacia se rechaza", !r.exito);
+     let muchos = [];
+    for (let i = 1; i <= 367; i++) {
+        muchos.push(dia(D(i), "06:00", "14:00", "Diurno"));
+    }
+    let filasAntes = tabla.length;
+    r = await controlador.programarDias(1, muchos, HOY);
+    verificar("mas de 366 dias en una peticion se rechaza", !r.exito && r.mensaje.indexOf("366") !== -1, r.mensaje);
+    verificar("al superar el limite no se guarda ningun dia", tabla.length === filasAntes);
 
     console.log("\n=== PRUEBA 4: solapamientos (no guarda nada) ===");
     let antes = JSON.stringify(tabla);
