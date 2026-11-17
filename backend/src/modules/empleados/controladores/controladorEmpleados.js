@@ -29,6 +29,21 @@ function completarDatos(datos) {
     }
 }
 
+const CAMPOS_A_LIMPIAR = [
+    "nombre", "apellido", "cedula", "correo", "telefono", "cargo",
+    "contactoNombre", "contactoTelefono", "contactoParentesco",
+    "telegramChatId"
+];
+
+function limpiarEspacios(datos) {
+    for (let i = 0; i < CAMPOS_A_LIMPIAR.length; i++) {
+        let campo = CAMPOS_A_LIMPIAR[i];
+        if (typeof datos[campo] === "string") {
+            datos[campo] = datos[campo].trim();
+        }
+    }
+}
+
 // revisa los datos y envia "" si todo esta bien y si no un mensaje de error
 function validarDatos(datos) {
 
@@ -73,6 +88,7 @@ function validarDatos(datos) {
 function registrarEmpleado(datos) {
 
     completarDatos(datos);
+    limpiarEspacios(datos);
 
     let error = validarDatos(datos);
 
@@ -133,6 +149,7 @@ function guardarEdicion(id, datosNuevos) {
     let sinContrasena = datosNuevos.contrasena === undefined || datosNuevos.contrasena === "";
 
     completarDatos(datosNuevos);
+    limpiarEspacios(datosNuevos);
 
     let empleadoViejo = null;
 
