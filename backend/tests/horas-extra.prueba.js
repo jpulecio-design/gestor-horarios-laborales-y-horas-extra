@@ -13,31 +13,31 @@ async function probar() {
 
     console.log("\n=== PRUEBA 1: registrar hora extra diurna valida ===");
     console.log((await controlador.registrarHoraExtra({
-        empleadoId: 1, fecha: "2026-08-10", tipo: "Diurna",
+        empleadoId: 7, fecha: "2026-08-10", tipo: "Diurna",
         cantidadHoras: 2, valorHoraBase: 5000
     })).mensaje);
 
     console.log("\n=== PRUEBA 2: registrar hora extra nocturna valida ===");
     console.log((await controlador.registrarHoraExtra({
-        empleadoId: 1, fecha: "2026-08-11", tipo: "Nocturna",
+        empleadoId: 7, fecha: "2026-08-11", tipo: "Nocturna",
         cantidadHoras: 3, valorHoraBase: 5000
     })).mensaje);
 
     console.log("\n=== PRUEBA 3: tipo invalido (debe fallar) ===");
     console.log((await controlador.registrarHoraExtra({
-        empleadoId: 1, fecha: "2026-08-10", tipo: "Madrugada",
+        empleadoId: 7, fecha: "2026-08-10", tipo: "Madrugada",
         cantidadHoras: 2, valorHoraBase: 5000
     })).mensaje);
 
     console.log("\n=== PRUEBA 4: cantidad de horas en cero (debe fallar) ===");
     console.log((await controlador.registrarHoraExtra({
-        empleadoId: 1, fecha: "2026-08-10", tipo: "Diurna",
+        empleadoId: 7, fecha: "2026-08-10", tipo: "Diurna",
         cantidadHoras: 0, valorHoraBase: 5000
     })).mensaje);
 
     console.log("\n=== RESULTADO FINAL ===");
-    console.log("Horas extra del empleado 1:");
-    for (let h of await repositorio.obtenerPorEmpleado(1)) {
+    console.log("Horas extra del empleado 7:");
+    for (let h of await repositorio.obtenerPorEmpleado(7)) {
         console.log("  ID: " + h.id + " | " + h.tipo + " | " + h.cantidadHoras + "h | $" + h.valor);
     }
     console.log("");
