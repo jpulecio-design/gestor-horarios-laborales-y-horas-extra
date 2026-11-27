@@ -94,8 +94,10 @@ function usarBaseEnMemoria() {
         return tabla.length < antes;
     };
     repositorioHorarios.obtenerAsignacionesPorEmpleado = async function () {
-        return [{ fechaDesde: "2000-01-01", fechaHasta: null,
-            turno: { id: 9, nombre: "Plantilla L-D", horaEntrada: "08:00", horaSalida: "17:00", dias: "1,2,3,4,5,6,7" } }];
+        return [{
+            fechaDesde: "2000-01-01", fechaHasta: null,
+            turno: { id: 9, nombre: "Plantilla L-D", horaEntrada: "08:00", horaSalida: "17:00", dias: "1,2,3,4,5,6,7" }
+        }];
     };
 }
 
@@ -181,7 +183,7 @@ async function probar() {
     verificar("empleado inactivo se rechaza", !r.exito && r.mensaje.indexOf("inactivo") !== -1, r.mensaje);
     r = await controlador.programarDias(1, [], HOY);
     verificar("lista de dias vacia se rechaza", !r.exito);
-     let muchos = [];
+    let muchos = [];
     for (let i = 1; i <= 367; i++) {
         muchos.push(dia(D(i), "06:00", "14:00", "Diurno"));
     }
